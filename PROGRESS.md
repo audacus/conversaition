@@ -21,10 +21,12 @@
   - ✅ **All AI Models Updated** - gpt-4.1-mini, claude-sonnet-4-20250514, gemini-2.5-flash
   - ✅ **Bob Streaming Issue FIXED** - LangChain Anthropic streaming now working perfectly
   - ✅ **Enhanced Conversation Controls** - Complete pause/resume/inject system
+  - ✅ **Simplified Participants** - Merged personalities into system prompts for cleaner architecture
   - ✅ **Advanced Error Handling** - Graceful recovery, timeout protection, no infinite loops
   - ✅ **Production-Ready APIs** - 5 new endpoints for conversation management
   - ✅ **State Management** - Thread-safe conversation state with real-time updates
   - ✅ **Event Broadcasting** - Comprehensive SSE event system for frontend integration
+  - ✅ **Documentation Updated** - All files updated to reflect latest architecture changes
 
 - **DAY 1+ MVP SUCCESS** (September 25, 2025)
   - ✅ **Python 3.13 Upgrade** - From Python 3.9 → 3.13.7 with latest dependencies
@@ -43,8 +45,8 @@
 - **Previous Setup** (Earlier September 2025)
   - Phase 0: Proof of Concept validation
   - MVP scope and architecture definition
-  - AGENT.md creation for AI tool instructions
-  - Information architecture setup (README.md, MVP.md, PROGRESS.md, AGENT.md)
+  - AGENTS.md creation for AI tool instructions
+  - Information architecture setup (README.md, MVP.md, PROGRESS.md, AGENTS.md)
   - Enhanced project structure with .env.example, docs/adr/
   - Created comprehensive Architecture Decision Records (ADRs)
   - Established AI-native project maintenance workflow
@@ -101,7 +103,7 @@
 - **Event Broadcasting:** Comprehensive SSE event system with structured data for frontend consumption
 
 **Previous Foundations:**
-- **AGENT.md Pattern:** Created standardized instructions for AI tools to maintain project state
+- **AGENTS.md Pattern:** Created standardized instructions for AI tools to maintain project state
 - **LangGraph Architecture:** Multi-agent orchestration with conditional routing and pause nodes
 - **AI Participant Strategy:** 3 distinct personalities with proper name referencing and context awareness
 - **ADR System:** Major technical decisions documented in docs/adr/ with structured format
@@ -193,7 +195,7 @@ curl "http://localhost:8000/conversation/status"
 - **Committed changes:** `85c0e96` - "Update AI models and fix Bob streaming"
 
 **Previous Session Changes:**
-- Enhanced `AGENT.md` - Added coding standards, file organization, security practices
+- Enhanced `AGENTS.md` - Added coding standards, file organization, security practices
 - Created `.env.example` - Complete environment variable templates for API keys
 - Created `docs/adr/001-langgraph-ai-sdk-adapter.md` - Core architectural decision with SSE/AI SDK patterns
 - Created `docs/adr/002-langgraph-multi-agent-patterns.md` - Multi-agent conversation patterns

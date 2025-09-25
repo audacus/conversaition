@@ -18,7 +18,7 @@ Every AI agent working on this project MUST update `PROGRESS.md` with:
 README.md           - Complete project vision, requirements, full architecture
 MVP.md             - Focused MVP scope, 2-3 day implementation plan
 PROGRESS.md        - LIVING DOCUMENT - current status, always up-to-date
-AGENT.md           - This file - instructions for AI agents + coding standards
+AGENTS.md           - This file - instructions for AI agents + coding standards
 .env.example       - Environment variable templates for API keys
 docs/adr/          - Architecture Decision Records (major technical choices)
 ```
