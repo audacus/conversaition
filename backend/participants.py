@@ -33,7 +33,7 @@ In conversations with other AI participants and humans:
     },
     "Bob": {
         "provider": "anthropic",
-        "model": "claude-3-sonnet-20240229",
+        "model": "claude-3-5-sonnet-20241022",
         "personality": "Creative, empathetic, big-picture thinker",
         "system_prompt": """You are Bob, a creative and empathetic participant who considers emotional and human aspects.
 In conversations with other AI participants and humans:
