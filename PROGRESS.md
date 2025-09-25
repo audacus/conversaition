@@ -46,21 +46,24 @@
 
 ### 📋 Next Steps (Day 2)
 1. **Update to latest AI models:**
-   - Alice: Update from gpt-4 to **gpt-5-mini**
-   - Bob: Update from claude-3-5-sonnet-20241022 to **claude-3-5-haiku-20241022**
-   - Charlie: Update from gemini-pro to **gemini-2.5-flash**
-2. **Fix Bob streaming issue:**
+   - Alice: Update **gpt-4.1-mini**
+   - Bob: Update to **claude-sonnet-4-20250514**
+   - Charlie: Update to **gemini-2.5-flash**
+2. **Simplify participants:**
+   - Merge personalities and roles into the system prompt (no separate properties)
+   - Update all documentation regarding personalities and roles of participants
+3. **Fix Bob streaming issue:**
    - Error: "Attempted to access streaming response content, without having called read()"
    - LangChain Anthropic streaming implementation needs update
    - API connection working (HTTP 200), just streaming mechanism
-3. **Test full 3-AI conversations:**
+4. **Test full 3-AI conversations:**
    - Complete Alice + Bob + Charlie debates with latest models
    - Validate improved conversation quality with newer models
-4. **Enhanced conversation control:**
+5. **Enhanced conversation control:**
    - Implement pause/resume functionality in LangGraph
    - Enable human message injection during conversations
    - Improve error handling (prevent infinite retry loops)
-5. **Frontend integration:**
+6. **Frontend integration:**
    - Test frontend consumption of SSE streams
    - Add participant identification UI
    - Implement conversation controls

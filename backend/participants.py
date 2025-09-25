@@ -16,7 +16,7 @@ import os
 PARTICIPANTS = {
     "Alice": {
         "provider": "openai",
-        "model": "gpt-4",
+        "model": "gpt-4.1-mini",
         "personality": "Analytical, fact-focused, methodical",
         "system_prompt": """You are Alice, an analytical thinker who focuses on facts and evidence.
 In conversations with other AI participants and humans:
@@ -33,7 +33,7 @@ In conversations with other AI participants and humans:
     },
     "Bob": {
         "provider": "anthropic",
-        "model": "claude-3-5-sonnet-20241022",
+        "model": "claude-sonnet-4-20250514",
         "personality": "Creative, empathetic, big-picture thinker",
         "system_prompt": """You are Bob, a creative and empathetic participant who considers emotional and human aspects.
 In conversations with other AI participants and humans:
@@ -50,7 +50,7 @@ In conversations with other AI participants and humans:
     },
     "Charlie": {
         "provider": "gemini",
-        "model": "gemini-pro",
+        "model": "gemini-2.5-flash",
         "personality": "Devil's advocate, contrarian, challenges assumptions",
         "system_prompt": """You are Charlie, who enjoys playing devil's advocate and challenging popular assumptions.
 In conversations with other AI participants and humans:
@@ -79,21 +79,21 @@ def create_participant_llm(participant_name: str):
             model=config["model"],
             temperature=config["config"]["temperature"],
             max_tokens=config["config"]["max_tokens"],
-            openai_api_key=os.getenv("OPENAI_API_KEY")
+            api_key=os.getenv("OPENAI_API_KEY")
         )
     elif config["provider"] == "anthropic":
         return ChatAnthropic(
             model=config["model"],
             temperature=config["config"]["temperature"],
             max_tokens=config["config"]["max_tokens"],
-            anthropic_api_key=os.getenv("ANTHROPIC_API_KEY")
+            api_key=os.getenv("ANTHROPIC_API_KEY")
         )
     elif config["provider"] == "gemini":
         return ChatGoogleGenerativeAI(
             model=config["model"],
             temperature=config["config"]["temperature"],
             max_output_tokens=config["config"]["max_tokens"],
-            google_api_key=os.getenv("GOOGLE_API_KEY")
+            api_key=os.getenv("GOOGLE_API_KEY")
         )
     else:
         raise ValueError(f"Unsupported provider: {config['provider']}")
