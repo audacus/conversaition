@@ -134,6 +134,14 @@ frontend/app/
 
 ## 🚦 Code Quality Standards
 
+### Git Commit Standards
+
+**Commit Message Format:**
+- Use short, concise one-line commit messages (50 characters or less)
+- Use imperative mood (e.g., "Add LangGraph dependencies" not "Added LangGraph dependencies")
+- Focus on what the commit does, not what was done
+- Examples: "Add participants config", "Fix SSE streaming", "Update conversation graph"
+
 ### Required Tools
 - **Python**: `black` formatting, `flake8` linting, `mypy` type checking
 - **TypeScript**: `prettier` formatting, `eslint` linting, built-in type checking

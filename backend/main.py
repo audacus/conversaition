@@ -1,8 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
+from pydantic import BaseModel
 import asyncio
 import json
+import logging
+from conversation_graph import conversation_graph
+from adapter import conversation_streamer
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Conversaition API", version="0.1.0")
 
@@ -19,45 +27,90 @@ app.add_middleware(
 async def root():
     return {"message": "Conversaition API", "status": "running"}
 
-@app.get("/stream")
-async def stream_events():
-    """
-    Minimal SSE endpoint that simulates AI SDK compatible events
-    """
-    async def event_generator():
-        # Start event
-        yield {
-            "event": "message",
-            "data": json.dumps({
-                "type": "text-start",
-                "data": {}
-            })
+# Pydantic models
+class StartConversationRequest(BaseModel):
+    topic: str
+    participants: list[str] = ["Alice", "Bob", "Charlie"]
+
+class AddMessageRequest(BaseModel):
+    content: str
+
+# Global conversation state
+active_conversation = None
+conversation_task = None
+
+@app.post("/conversation/start")
+async def start_conversation(request: StartConversationRequest):
+    """Start a new multi-AI conversation"""
+    global active_conversation, conversation_task
+
+    try:
+        logger.info(f"Starting conversation with topic: {request.topic}")
+
+        # Set up event callback to connect LangGraph to the streamer
+        async def handle_conversation_event(event):
+            await conversation_streamer.handle_langgraph_event(event)
+
+        conversation_graph.add_event_callback(handle_conversation_event)
+
+        # Start conversation in background task
+        conversation_task = asyncio.create_task(
+            conversation_graph.start_conversation(request.topic, request.participants)
+        )
+
+        return {
+            "status": "started",
+            "topic": request.topic,
+            "participants": request.participants
         }
 
-        # Simulate streaming text chunks (like AI response)
-        message_parts = ["Hello", " from", " the", " backend!", " This", " is", " streaming", " text."]
+    except Exception as e:
+        logger.error(f"Error starting conversation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-        for part in message_parts:
-            event = {
-                "type": "text-delta",
-                "data": {"textDelta": part}
-            }
-            yield {
-                "event": "message",
-                "data": json.dumps(event)
-            }
-            await asyncio.sleep(0.5)  # Simulate realistic streaming delay
+@app.get("/conversation/stream")
+async def stream_conversation():
+    """
+    Stream conversation events to frontend using AI SDK compatible format
+    """
+    try:
+        # Create client queue
+        client_queue = asyncio.Queue()
+        conversation_streamer.add_client(client_queue)
 
-        # End event
-        yield {
-            "event": "message",
-            "data": json.dumps({
-                "type": "text-done",
-                "data": {}
-            })
-        }
+        logger.info("New SSE client connected")
 
-    return EventSourceResponse(event_generator())
+        # Return SSE stream
+        return EventSourceResponse(
+            conversation_streamer.generate_sse_stream(client_queue),
+            media_type="text/plain"
+        )
+
+    except Exception as e:
+        logger.error(f"Error in conversation stream: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/conversation/message")
+async def add_human_message(request: AddMessageRequest):
+    """Add human message to active conversation"""
+    global active_conversation
+
+    try:
+        # For MVP, we'll implement this later
+        # This would add human message to conversation state
+        logger.info(f"Human message: {request.content}")
+
+        # Broadcast human message event
+        await conversation_streamer.handle_langgraph_event({
+            "type": "human_message_added",
+            "data": {"content": request.content}
+        })
+
+        return {"status": "added", "content": request.content}
+
+    except Exception as e:
+        logger.error(f"Error adding human message: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 async def health_check():
