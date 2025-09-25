@@ -25,12 +25,14 @@ class ConversationState(TypedDict):
     turn_count: int
     conversation_active: bool
     human_input_pending: bool
+    conversation_paused: bool
     topic: Optional[str]
 
 class ConversationGraph:
     def __init__(self):
         self.graph = self._build_graph()
         self.event_callbacks = []
+        self.current_state = None
 
     def _build_graph(self):
         """Build the LangGraph conversation flow"""
@@ -38,13 +40,15 @@ class ConversationGraph:
 
         # Core nodes
         graph.add_node("scheduler", self._schedule_next_speaker)
+        graph.add_node("pause_check", self._check_pause_status)
         graph.add_node("ai_response", self._generate_ai_response)
         graph.add_node("human_check", self._check_human_input)
         graph.add_node("end_turn", self._end_turn)
 
         # Define flow
         graph.set_entry_point("scheduler")
-        graph.add_edge("scheduler", "ai_response")
+        graph.add_edge("scheduler", "pause_check")
+        graph.add_conditional_edges("pause_check", self._route_after_pause_check)
         graph.add_edge("ai_response", "human_check")
         graph.add_conditional_edges("human_check", self._route_after_human_check)
         graph.add_edge("end_turn", "scheduler")
@@ -148,9 +152,22 @@ class ConversationGraph:
             logger.error(f"Error generating AI response for {current_speaker}: {e}")
             await self._emit_event("ai_response_error", {
                 "participant": current_speaker,
-                "error": str(e)
+                "error": str(e),
+                "turn": state.get("turn_count", 0)
             })
-            return state
+
+            # Add error recovery: create an error message to keep conversation flowing
+            error_message = AIMessage(
+                content=f"[{current_speaker} encountered an error and cannot respond at this time]",
+                additional_kwargs={"participant": current_speaker, "error": True}
+            )
+
+            # Still increment turn count to prevent getting stuck
+            return {
+                **state,
+                "messages": messages + [error_message],
+                "turn_count": state.get("turn_count", 0) + 1
+            }
 
     async def _check_human_input(self, state: ConversationState) -> ConversationState:
         """Check if human wants to interject"""
@@ -160,6 +177,45 @@ class ConversationGraph:
             **state,
             "human_input_pending": False
         }
+
+    async def _check_pause_status(self, state: ConversationState) -> ConversationState:
+        """Check if conversation is paused"""
+        if state.get("conversation_paused", False):
+            await self._emit_event("conversation_paused", {
+                "message": "Conversation is paused - waiting for resume"
+            })
+
+            # Wait for resume with timeout to prevent infinite waiting
+            max_wait_time = 300  # 5 minutes max
+            wait_start = asyncio.get_event_loop().time()
+
+            while (state.get("conversation_paused", False) and
+                   (asyncio.get_event_loop().time() - wait_start) < max_wait_time):
+                await asyncio.sleep(0.5)  # Check every 500ms
+
+                # Update state from current instance to get real-time status
+                if self.current_state:
+                    state.update(self.current_state)
+
+            if state.get("conversation_paused", False):
+                # Still paused after timeout - end conversation
+                await self._emit_event("conversation_timeout", {
+                    "message": "Conversation auto-ended due to extended pause"
+                })
+                state["conversation_active"] = False
+            else:
+                await self._emit_event("conversation_resumed", {
+                    "message": "Conversation resumed"
+                })
+
+        return state
+
+    def _route_after_pause_check(self, state: ConversationState):
+        """Route after checking pause status"""
+        if state.get("conversation_paused", False):
+            return "pause_check"  # Stay in pause check until resumed
+        else:
+            return "ai_response"
 
     def _route_after_human_check(self, state: ConversationState):
         """Route based on human input status and conversation state"""
@@ -192,8 +248,12 @@ class ConversationGraph:
             turn_count=0,
             conversation_active=True,
             human_input_pending=False,
+            conversation_paused=False,
             topic=topic
         )
+
+        # Store current state for pause/resume control
+        self.current_state = initial_state
 
         await self._emit_event("conversation_start", {
             "topic": topic,
@@ -221,6 +281,49 @@ class ConversationGraph:
             **state,
             "messages": state["messages"] + [human_message]
         }
+
+    def pause_conversation(self) -> bool:
+        """Pause the active conversation"""
+        if self.current_state:
+            self.current_state["conversation_paused"] = True
+            return True
+        return False
+
+    def resume_conversation(self) -> bool:
+        """Resume the paused conversation"""
+        if self.current_state:
+            self.current_state["conversation_paused"] = False
+            return True
+        return False
+
+    def is_paused(self) -> bool:
+        """Check if conversation is currently paused"""
+        if self.current_state:
+            return self.current_state.get("conversation_paused", False)
+        return False
+
+    def is_active(self) -> bool:
+        """Check if conversation is currently active"""
+        if self.current_state:
+            return self.current_state.get("conversation_active", False)
+        return False
+
+    def add_human_message_to_state(self, content: str) -> bool:
+        """Add human message directly to current conversation state"""
+        if self.current_state:
+            human_message = HumanMessage(
+                content=content,
+                additional_kwargs={"participant": "Human"}
+            )
+
+            # Add to messages in current state
+            self.current_state["messages"].append(human_message)
+
+            # Set flag to indicate human input was added
+            self.current_state["human_input_pending"] = False
+
+            return True
+        return False
 
 # Global instance for the application
 conversation_graph = ConversationGraph()

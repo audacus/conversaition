@@ -98,23 +98,81 @@ async def stream_conversation():
 @app.post("/conversation/message")
 async def add_human_message(request: AddMessageRequest):
     """Add human message to active conversation"""
-    global active_conversation
-
     try:
-        # For MVP, we'll implement this later
-        # This would add human message to conversation state
+        # Check if conversation is active
+        if not conversation_graph.is_active():
+            raise HTTPException(status_code=400, detail="No active conversation")
+
         logger.info(f"Human message: {request.content}")
 
-        # Broadcast human message event
-        await conversation_streamer.handle_langgraph_event({
-            "type": "human_message_added",
-            "data": {"content": request.content}
-        })
+        # Add human message to conversation state
+        success = conversation_graph.add_human_message_to_state(request.content)
 
-        return {"status": "added", "content": request.content}
+        if success:
+            # Broadcast human message event
+            await conversation_streamer.handle_langgraph_event({
+                "type": "human_message_added",
+                "data": {
+                    "content": request.content,
+                    "participant": "Human",
+                    "timestamp": asyncio.get_event_loop().time()
+                }
+            })
+
+            return {"status": "added", "content": request.content}
+        else:
+            raise HTTPException(status_code=400, detail="Failed to add message to conversation")
 
     except Exception as e:
         logger.error(f"Error adding human message: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/conversation/pause")
+async def pause_conversation():
+    """Pause the active conversation"""
+    try:
+        success = conversation_graph.pause_conversation()
+        if success:
+            # Broadcast pause event
+            await conversation_streamer.handle_langgraph_event({
+                "type": "conversation_paused",
+                "data": {"message": "Conversation paused"}
+            })
+            return {"status": "paused", "message": "Conversation has been paused"}
+        else:
+            raise HTTPException(status_code=400, detail="No active conversation to pause")
+    except Exception as e:
+        logger.error(f"Error pausing conversation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/conversation/resume")
+async def resume_conversation():
+    """Resume the paused conversation"""
+    try:
+        success = conversation_graph.resume_conversation()
+        if success:
+            # Broadcast resume event
+            await conversation_streamer.handle_langgraph_event({
+                "type": "conversation_resumed",
+                "data": {"message": "Conversation resumed"}
+            })
+            return {"status": "resumed", "message": "Conversation has been resumed"}
+        else:
+            raise HTTPException(status_code=400, detail="No paused conversation to resume")
+    except Exception as e:
+        logger.error(f"Error resuming conversation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/conversation/status")
+async def get_conversation_status():
+    """Get current conversation status"""
+    try:
+        return {
+            "active": conversation_graph.is_active(),
+            "paused": conversation_graph.is_paused()
+        }
+    except Exception as e:
+        logger.error(f"Error getting conversation status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
