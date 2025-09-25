@@ -437,10 +437,9 @@ class ConversationStateManager:
   "provider": "openai|anthropic|gemini|local",
   "model": "string",
   "config": {
-    "system_prompt": "string",
+    "system_prompt": "string (includes personality and role definition)",
     "temperature": 0.7,
     "max_tokens": 2048,
-    "personality": "string",
     "expertise": ["string"],
     "weight": 1.0
   }
@@ -628,7 +627,7 @@ uvicorn[standard]==0.24.0
 #### Sprint 3.3: Participant Pool & Templates
 - [ ] Participant pool management with Redis storage
 - [ ] Conversation templates with LangGraph configurations
-- [ ] AI personality profiles and expertise roles
+- [ ] Enhanced AI participant system prompts with expertise roles
 - [ ] Template-based conversation creation
 - [ ] Import/export participant configurations (JSON)
 
