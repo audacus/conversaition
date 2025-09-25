@@ -5,8 +5,13 @@ from pydantic import BaseModel
 import asyncio
 import json
 import logging
+import os
+from dotenv import load_dotenv
 from conversation_graph import conversation_graph
 from adapter import conversation_streamer
+
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
