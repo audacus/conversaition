@@ -53,6 +53,7 @@
   - Export/import conversation configurations
   - Save and restore conversation state
   - Backup and recovery functionality
+  - Persist raw transcripts to disk for downstream analytics/export (see `data/transcripts/`)
 
 ### Message Threading & Branching
 - Support branching conversations where different AIs explore different aspects
@@ -75,6 +76,11 @@
 - Handle multiple concurrent AI responses
 - Maintain conversation state persistence
 - Support for high-frequency message exchanges
+
+## Testing & Quality Checks
+
+- Backend unit scaffolding (safe to run without LangGraph deps): `python3 -m unittest backend.tests.test_conversation_graph`
+- Frontend linting: `cd frontend && npm run lint`
 
 ## Technical Architecture
 

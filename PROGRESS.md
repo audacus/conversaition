@@ -1,13 +1,16 @@
 # Conversaition - Development Progress
 
 **Date:** September 27, 2025
-**Session:** SSE Duplication Fix - Align Codex Hook Architecture with Master
-**Status:** ✅ **SSE duplication mitigation implemented; awaiting StrictMode validation before final sign-off**
+**Session:** Branch Comparison Alignment - Master vs Codex
+**Status:** 🔄 **Evaluating master vs codex branches to capture best-of implementations before merge**
 
 ## 🎯 Current Status
 
-- 🔍 **Current Focus:** Monitor new streaming hook split and schedule StrictMode smoke test to confirm single connection behavior
-- ✅ **Hook Separation Implemented:** New `useSSEStream` + `useAISDKAdapter` structure merged into master; pending real conversation smoke test to confirm duplication is gone
+- 🕘 **Session Start (2025-09-26 15:41 CEST):** Reviewed CLAUDE.md and AGENTS.md, confirming branch comparison objectives and MERGE.md deliverable
+- 🔍 **Current Focus:** Compare `master` and `codex` branches, catalog superior implementations, and prepare MERGE.md guidance
+- ✅ **StrictMode Validation:** Live Playwright run on Next.js dev server confirmed single EventSource connection
+- ✅ **Hook Separation Implemented:** New `useSSEStream` + `useAISDKAdapter` structure merged into master; ongoing monitoring during codex backport
+- 🛠️ **Implementation (2025-09-26 15:49 CEST):** Reapplying codex branch scheduling logic, adapter metadata, and UI polish onto `master`
 
 **Enterprise-Ready Conversaition Platform with Optimal Performance!**
 - ✅ **Event-Driven Status Updates** - Eliminated UI lag with real-time SSE status events
@@ -21,6 +24,15 @@
 **Status:** ENTERPRISE-READY PLATFORM WITH OPTIMAL PERFORMANCE 🚀
 
 ### ✅ Recently Completed
+- **Codex Feature Rebackport** (September 27, 2025)
+  - ✅ Restored conversation graph state syncing with mention-driven scheduling and round-robin pointer biasing
+  - ✅ Increased participant max tokens (250) and reinstated explicit `@Name` prompts to align with mention routing
+  - ✅ Reconciled frontend hooks (SSE + AI SDK adapter + API) to expose meta state, roles, and configurable API base URLs
+  - ✅ Refreshed Next.js page with avatars, meta indicators, guarded human injection flow, and reinstated a functional Stop control backed by a new `/conversation/stop` endpoint
+  - ✅ Reintroduced public avatar assets (Alice/Bob/Charlie/Human) for richer UI presentation
+  - ✅ Persist transcripts to disk on stop (`backend/storage.py`) and surfaced lifecycle telemetry (start/end timestamps, duration) in the operator UI
+  - ✅ Added backend unit scaffolding for mention scheduling & stop flow (skips when LangGraph deps missing) and documented run commands
+  - ✅ Verification: `npm run lint` (frontend) ✅
 - **SSE Duplication Hook Separation** (September 27, 2025)
   - ✅ Created `frontend/app/hooks/useAISDKAdapter.ts` for AI SDK stream processing and status normalization
   - ✅ Refactored `frontend/app/hooks/useSSEStream.ts` to manage EventSource lifecycle with StrictMode-safe guards
@@ -81,27 +93,34 @@
 - None; implementation is staged for verification next session
 
 ### 🔜 Next Actions
-1. Run StrictMode smoke test to confirm new hook architecture keeps a single EventSource connection
-2. Capture before/after logs or screenshots to document duplication behavior change
-3. Draft follow-up plan for SSE reconnection/error handling post-verification
+1. Merge codex state-sync + mention scheduling back into `ConversationGraph` and retest pause/inject
+2. Restore adapter meta/role data and configurable API base URL in frontend hooks before UI polish
+3. Decide on `/conversation/stop` endpoint vs. removing Stop button to avoid partial shutdown UX
 
 ### 🚧 Blockers
-- Pending: StrictMode smoke test still needs to run to validate duplication is fully resolved
+- None; StrictMode dev run succeeded locally, but codex backport work is queued
 
 ### 🧰 Environment Setup Needs
 - Backend: `cd backend && source .venv/bin/activate && python main.py`
 - Frontend: `cd frontend && npm run dev`
 
 ### ⚠️ Known Issues
-- **Critical (Mitigation pending validation):** React StrictMode creates duplicate SSE connections on master; new hook separation implemented and awaiting live verification
+- **Functional:** `Stop` button only closes SSE client; backend conversation continues running until natural end
+- **Critical (Regression risk):** React StrictMode duplication appears resolved after live test, continue monitoring during codex merge
 - **Minor**: Python 3.13 shows occasional escape sequence warnings (cosmetic only)
 - **Performance**: Long conversations (50+ turns) may need pagination or optimization
 
 ### 💡 Recent Decisions & Ideas
 
 **SSE Architecture Fix (Sept 27, 2025):**
+- **Live verification:** End-to-end Playwright run confirmed start/pause/resume/stop flow and human message injection against local backend
 - **Hook Separation:** Adopt Codex branch pattern (`useSSEStream` for connection + `useAISDKAdapter` for event processing) to avoid duplicate handlers under StrictMode
 - **Status Propagation:** Centralize conversation status updates in the adapter to keep UI logic thin and deterministic
+
+**Master vs Codex Branch Audit (Sept 27, 2025):**
+- Discovered `master` dropped key `ConversationGraph` state syncing that `codex` still has; need to reapply to keep pause/inject stable
+- Expanded `MERGE.md` with prioritized backend scheduling, frontend hook, and UI alignment guidance to steer the eventual merge
+- Completed first wave of backports: restored mention-aware scheduling, adapter metadata, and avatars while removing the dormant Stop UI until a backend endpoint exists
 
 **Day 2 Architecture Enhancements:**
 - **Advanced State Management:** Thread-safe conversation state with real-time pause/resume controls
@@ -196,6 +215,20 @@ curl "http://localhost:8000/conversation/status"
 - ✅ TypeScript integration with proper error handling
 - ✅ Production-ready conversation platform
 
+## 📁 File Changes This Session (Branch Comparison Alignment)
+- Expanded `MERGE.md` with deeper master vs codex guidance covering conversation graph state sync, frontend hooks, and UI differences
+- Exercised frontend via Playwright (localhost:3000) for end-to-end validation: start/pause/resume/stop + human injection
+
+## 📁 File Changes This Session (Codex Feature Backport)
+- Updated `backend/conversation_graph.py` with mention parsing, round-robin biasing, and `current_participants` / `current_topic` state
+- Raised participant token budgets and restored `@Name` directives in `backend/participants.py`; wired pause/resume status data in `backend/main.py`
+- Added `/conversation/stop` endpoint with graceful LangGraph shutdown and SSE status broadcasting
+- Reconciled frontend hooks (`useAISDKAdapter`, `useSSEStream`, `useConversationApi`) plus shared types to expose meta, roles, and configurable API base URLs
+- Refreshed `frontend/app/page.tsx` UI with avatars, meta indicators (including start time + duration), guarded human injection, and a working Stop control wired to the backend
+- Reintroduced avatar assets (`frontend/public/Alice.svg`, `Bob.svg`, `Charlie.svg`, `User.svg`) for participant visuals
+- Added transcript persistence helper (`backend/storage.py`) plus local storage under `data/transcripts/`
+- Created backend unit tests (skip-safe) covering mention scheduling + stop flow (`backend/tests/test_conversation_graph.py`)
+
 ## 📁 File Changes This Session (SSE Duplication Fix)
 - **Created `frontend/app/hooks/useAISDKAdapter.ts`** - Dedicated AI SDK event processing hook with message/status normalization
 - **Updated `frontend/app/hooks/useSSEStream.ts`** - EventSource lifecycle only, handler registry, StrictMode-safe guards
@@ -231,7 +264,11 @@ curl "http://localhost:8000/conversation/status"
 - Created `docs/adr/002-langgraph-multi-agent-patterns.md` - Multi-agent conversation patterns
 
 ---
-**Next Session:** Run StrictMode smoke test, document duplication resolution, scope reconnection/error-handling plan
+**Next Session:** (1) Introduce frontend Playwright smoke for stop/pause/resume + StrictMode mount behaviour, (2) Build transcript loading/export endpoint and basic analytics rollups, (3) Wire conversation duration + stop events into server-side logging/metrics pipeline
+
+**Testing Notes:**
+- Backend unit scaffolding: `python3 -m unittest backend.tests.test_conversation_graph` (skips if LangGraph deps unavailable)
+- Frontend lint: `cd frontend && npm run lint`
 
 **Completed:** Enterprise-ready Conversaition platform with optimal performance! 🚀
 
