@@ -1,15 +1,15 @@
-# Conversaition Project Memory
+# Conversaition AI Agent Instructions
 
 ## Project Context
 You're working on **Conversaition** - a multi-AI conversation platform with human oversight. The MVP is complete and performance-optimized. Current status: enterprise-ready platform with 3 AI participants (Alice, Bob, Charlie) using latest AI models.
 
-Key files: `PROGRESS.md` (living document), `AGENTS.md` (human instructions), `MVP.md` (implementation scope), `README.md` (full vision).
+**For project structure and static information, see AGENTS.md**
 
 ## Critical Git Standards
 **NEVER mention Claude Code, "Generated with", or any AI attribution in commit messages.**
 
 Required format:
-- Short, imperative messages (80 chars max)
+- Short, imperative messages (128 chars max)
 - Examples: "Add participants config", "Fix SSE streaming", "Update conversation graph"
 - Focus on what the commit does, not what was done
 
@@ -46,6 +46,28 @@ Create ADR files in `docs/adr/` for major technical decisions:
 - Run lint/typecheck commands when available
 - Validate changes work before marking tasks complete
 
+## Session Workflow Protocol
+**Every session must follow this pattern:**
+
+### Session Start:
+1. **Read PROGRESS.md first** - understand current state
+2. **Validate environment setup** (backend/frontend running if needed)
+3. **Review recent decisions** and implementation approach
+4. **Update PROGRESS.md** with session start status
+5. **Pick up from documented next steps**
+
+### During Work:
+- **Update PROGRESS.md frequently** - after completing tasks
+- **Document blockers/issues** as they arise
+- **Note architectural decisions** and rationale
+
+### Session End:
+1. **Update PROGRESS.md** with current status
+2. **Document any blockers** clearly
+3. **List next 3 concrete actions** for continuation
+4. **Note environment setup needs**
+5. **Commit/save work** appropriately
+
 ## Task Management
 Use TodoWrite tool proactively for:
 - Complex multi-step tasks (3+ steps)
@@ -60,9 +82,3 @@ Mark todos complete immediately after finishing tasks.
 - Answer directly without unnecessary preamble
 - Focus on the specific task at hand
 - Use TodoWrite to demonstrate progress tracking
-
-## Project Architecture Notes
-- Backend: FastAPI + LangGraph + in-memory state (MVP)
-- Frontend: Next.js + TypeScript + AI SDK
-- AI Models: gpt-4.1-mini, claude-sonnet-4-20250514, gemini-2.5-flash
-- Future: Database migration path planned (PostgreSQL + Redis)
