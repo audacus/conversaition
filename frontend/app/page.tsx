@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useConversationApi } from './hooks/useConversationApi';
 import { useSSEStream } from './hooks/useSSEStream';
+import { useAISDKAdapter } from './hooks/useAISDKAdapter';
 
 export default function Home() {
   const [topic, setTopic] = useState('Should AI have creative rights?');
   const [humanMessage, setHumanMessage] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState(['Alice', 'Bob', 'Charlie']);
-  const [status, setStatus] = useState<{active: boolean, paused: boolean, participants?: string[], current_topic?: string} | null>(null);
 
   const {
     loading: apiLoading,
@@ -20,39 +20,37 @@ export default function Home() {
   } = useConversationApi();
 
   const {
-    messages,
     isStreaming,
     connectionStatus,
     startStream,
     stopStream,
-    clearMessages,
   } = useSSEStream();
-
-  // Listen for status updates from SSE instead of polling
-  useEffect(() => {
-    const handleStatusUpdate = (event: CustomEvent) => {
-      if (event.detail) {
-        setStatus(prev => ({
-          ...prev,
-          active: event.detail.active || false,
-          paused: event.detail.paused || false,
-          participants: event.detail.participants || prev?.participants || [],
-          current_topic: event.detail.topic || prev?.current_topic
-        }));
-      }
-    };
-
-    window.addEventListener('conversationStatus', handleStatusUpdate as EventListener);
-    return () => {
-      window.removeEventListener('conversationStatus', handleStatusUpdate as EventListener);
-    };
-  }, []);
+  const {
+    messages,
+    status: conversationStatus,
+    handleStreamEvent,
+    applyStatus,
+    reset,
+  } = useAISDKAdapter();
 
   const handleStartConversation = async () => {
     try {
-      clearMessages();
+      stopStream();
+      reset();
+      applyStatus({
+        active: false,
+        paused: false,
+        participants: selectedParticipants,
+        topic,
+      });
       await startConversation(topic, selectedParticipants);
-      startStream();
+      applyStatus({
+        active: true,
+        paused: false,
+        participants: selectedParticipants,
+        topic,
+      });
+      startStream(handleStreamEvent);
     } catch (error) {
       console.error('Failed to start conversation:', error);
     }
@@ -61,6 +59,7 @@ export default function Home() {
   const handlePauseConversation = async () => {
     try {
       await pauseConversation();
+      applyStatus({ paused: true, active: true });
     } catch (error) {
       console.error('Failed to pause conversation:', error);
     }
@@ -69,6 +68,7 @@ export default function Home() {
   const handleResumeConversation = async () => {
     try {
       await resumeConversation();
+      applyStatus({ paused: false, active: true });
     } catch (error) {
       console.error('Failed to resume conversation:', error);
     }
@@ -87,6 +87,7 @@ export default function Home() {
 
   const handleStopConversation = () => {
     stopStream();
+    applyStatus({ active: false, paused: false });
   };
 
   const getParticipantColor = (participant?: string) => {
@@ -99,8 +100,8 @@ export default function Home() {
     }
   };
 
-  const isConversationActive = status?.active || isStreaming;
-  const isConversationPaused = status?.paused || false;
+  const isConversationActive = conversationStatus.active || isStreaming;
+  const isConversationPaused = conversationStatus.paused || false;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -268,7 +269,7 @@ export default function Home() {
                 <div className="mt-4 text-sm text-gray-400">
                   <p><strong>Alice:</strong> Analytical, fact-focused responses</p>
                   <p><strong>Bob:</strong> Creative, empathetic responses</p>
-                  <p><strong>Charlie:</strong> Contrarian, devil's advocate responses</p>
+                  <p><strong>Charlie:</strong> Contrarian, devil&apos;s advocate responses</p>
                 </div>
               </div>
             ) : (

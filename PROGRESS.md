@@ -1,10 +1,13 @@
 # Conversaition - Development Progress
 
-**Date:** September 26, 2025
-**Session:** Critical Performance Optimization - Event-Driven Status Updates
-**Status:** 🚀 **PERFORMANCE OPTIMIZATION COMPLETE - ENTERPRISE-READY CONVERSAITION PLATFORM**
+**Date:** September 27, 2025
+**Session:** SSE Duplication Fix - Align Codex Hook Architecture with Master
+**Status:** ✅ **SSE duplication mitigation implemented; awaiting StrictMode validation before final sign-off**
 
 ## 🎯 Current Status
+
+- 🔍 **Current Focus:** Monitor new streaming hook split and schedule StrictMode smoke test to confirm single connection behavior
+- ✅ **Hook Separation Implemented:** New `useSSEStream` + `useAISDKAdapter` structure merged into master; pending real conversation smoke test to confirm duplication is gone
 
 **Enterprise-Ready Conversaition Platform with Optimal Performance!**
 - ✅ **Event-Driven Status Updates** - Eliminated UI lag with real-time SSE status events
@@ -18,6 +21,11 @@
 **Status:** ENTERPRISE-READY PLATFORM WITH OPTIMAL PERFORMANCE 🚀
 
 ### ✅ Recently Completed
+- **SSE Duplication Hook Separation** (September 27, 2025)
+  - ✅ Created `frontend/app/hooks/useAISDKAdapter.ts` for AI SDK stream processing and status normalization
+  - ✅ Refactored `frontend/app/hooks/useSSEStream.ts` to manage EventSource lifecycle with StrictMode-safe guards
+  - ✅ Updated `frontend/app/page.tsx` to consume the new hooks while preserving controls and status indicators
+  - ✅ Added shared stream types (`frontend/app/types/*`) and verified `npm run lint`
 - **CRITICAL PERFORMANCE OPTIMIZATION** (September 26, 2025)
   - ✅ **Event-Driven Status System** - Replaced 2-second polling with real-time SSE status events
   - ✅ **SSE Integration Fixes** - Fixed MIME type (`text/event-stream`) and data format issues
@@ -70,47 +78,30 @@
   - Established AI-native project maintenance workflow
 
 ### 🔄 Currently Working On
-- **Day 2 Complete** - Enhanced conversation controls and latest AI models implemented successfully!
-- **Ready for Day 3** - Frontend integration and user experience improvements
+- None; implementation is staged for verification next session
 
-### 📋 Next Steps (Day 3 - Frontend Integration & Polish)
-1. **Frontend conversation controls UI:**
-   - Add pause/resume buttons to the frontend interface
-   - Implement human message input field with real-time injection
-   - Display conversation status (active/paused) indicator
-   - Show participant identification for each message
+### 🔜 Next Actions
+1. Run StrictMode smoke test to confirm new hook architecture keeps a single EventSource connection
+2. Capture before/after logs or screenshots to document duplication behavior change
+3. Draft follow-up plan for SSE reconnection/error handling post-verification
 
-2. **Enhanced user experience:**
-   - Improve streaming message display with proper formatting
-   - Add participant avatars/icons for visual distinction
-   - Implement conversation history persistence in local storage
-   - Add topic suggestion feature for starting conversations
+### 🚧 Blockers
+- Pending: StrictMode smoke test still needs to run to validate duplication is fully resolved
 
-3. **UI improvements:**
-   - Responsive design for mobile/desktop viewing
-   - Better error message display and user feedback
-   - Loading states and progress indicators during AI responses
-   - Conversation export functionality (JSON/text formats)
-
-4. **Testing and validation:**
-   - End-to-end testing of full conversation flow
-   - Test conversation controls with all 3 AI participants
-   - Performance testing with long conversations
-   - Cross-browser compatibility verification
-
-5. **Polish and deployment preparation:**
-   - Add basic analytics/metrics collection
-   - Implement conversation templates/presets
-   - Documentation for API endpoints and usage
-   - Production deployment configuration
+### 🧰 Environment Setup Needs
+- Backend: `cd backend && source .venv/bin/activate && python main.py`
+- Frontend: `cd frontend && npm run dev`
 
 ### ⚠️ Known Issues
-- **All major issues resolved!** 🎉
+- **Critical (Mitigation pending validation):** React StrictMode creates duplicate SSE connections on master; new hook separation implemented and awaiting live verification
 - **Minor**: Python 3.13 shows occasional escape sequence warnings (cosmetic only)
-- **Frontend**: Basic frontend needs integration with new conversation controls
 - **Performance**: Long conversations (50+ turns) may need pagination or optimization
 
 ### 💡 Recent Decisions & Ideas
+
+**SSE Architecture Fix (Sept 27, 2025):**
+- **Hook Separation:** Adopt Codex branch pattern (`useSSEStream` for connection + `useAISDKAdapter` for event processing) to avoid duplicate handlers under StrictMode
+- **Status Propagation:** Centralize conversation status updates in the adapter to keep UI logic thin and deterministic
 
 **Day 2 Architecture Enhancements:**
 - **Advanced State Management:** Thread-safe conversation state with real-time pause/resume controls
@@ -205,7 +196,16 @@ curl "http://localhost:8000/conversation/status"
 - ✅ TypeScript integration with proper error handling
 - ✅ Production-ready conversation platform
 
-## 📁 File Changes This Session (Performance Optimization)
+## 📁 File Changes This Session (SSE Duplication Fix)
+- **Created `frontend/app/hooks/useAISDKAdapter.ts`** - Dedicated AI SDK event processing hook with message/status normalization
+- **Updated `frontend/app/hooks/useSSEStream.ts`** - EventSource lifecycle only, handler registry, StrictMode-safe guards
+- **Added shared types** (`frontend/app/types/ai-sdk.ts`, `frontend/app/types/sse.ts`) - Centralized stream and status interfaces
+- **Updated `frontend/app/page.tsx`** - Integrated new hooks, removed custom event bridge, maintained UI controls
+- **Updated `PROGRESS.md`** - Logged session focus, decisions, file changes, and next steps
+- **Removed `TODO.md`** - Deprecated checklist consolidated into PROGRESS.md tracking
+- **Verification:** `npm run lint` (frontend) ✅
+
+**Previous Session Changes (Performance Optimization):**
 - **Updated `backend/main.py`** - Added `conversation_status` SSE events to all conversation operations (start/pause/resume)
 - **Updated `backend/adapter.py`** - Fixed SSE data format (removed double "data:" prefix)
 - **Updated `frontend/app/hooks/useSSEStream.ts`** - Added `conversation_status` event handler with CustomEvent dispatch
@@ -231,7 +231,7 @@ curl "http://localhost:8000/conversation/status"
 - Created `docs/adr/002-langgraph-multi-agent-patterns.md` - Multi-agent conversation patterns
 
 ---
-**Next Session:** Optional Advanced Features & Deployment
+**Next Session:** Run StrictMode smoke test, document duplication resolution, scope reconnection/error-handling plan
 
 **Completed:** Enterprise-ready Conversaition platform with optimal performance! 🚀
 
