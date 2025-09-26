@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 from conversation_graph import conversation_graph
 from adapter import conversation_streamer
+from storage import transcript_store
 
 # Load environment variables
 load_dotenv()
@@ -155,8 +156,8 @@ async def pause_conversation():
                 "data": {
                     "active": True,
                     "paused": True,
-                    "participants": getattr(conversation_graph, 'current_participants', ['Alice', 'Bob', 'Charlie']),
-                    "topic": getattr(conversation_graph, 'current_topic', 'Active conversation')
+                    "participants": conversation_graph.current_participants or ["Alice", "Bob", "Charlie"],
+                    "topic": conversation_graph.current_topic or "Active conversation"
                 }
             })
             return {"status": "paused", "message": "Conversation has been paused"}
@@ -183,8 +184,8 @@ async def resume_conversation():
                 "data": {
                     "active": True,
                     "paused": False,
-                    "participants": getattr(conversation_graph, 'current_participants', ['Alice', 'Bob', 'Charlie']),
-                    "topic": getattr(conversation_graph, 'current_topic', 'Active conversation')
+                    "participants": conversation_graph.current_participants or ["Alice", "Bob", "Charlie"],
+                    "topic": conversation_graph.current_topic or "Active conversation"
                 }
             })
             return {"status": "resumed", "message": "Conversation has been resumed"}
@@ -192,6 +193,48 @@ async def resume_conversation():
             raise HTTPException(status_code=400, detail="No paused conversation to resume")
     except Exception as e:
         logger.error(f"Error resuming conversation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/conversation/stop")
+async def stop_conversation():
+    """Stop the active conversation and clean up resources"""
+    global conversation_task
+
+    if not conversation_graph.is_active() and not conversation_graph.is_paused():
+        raise HTTPException(status_code=400, detail="No active conversation to stop")
+
+    try:
+        snapshot_state = conversation_graph.current_state
+        participants_snapshot = list(conversation_graph.current_participants)
+        topic_snapshot = conversation_graph.current_topic
+
+        stopped = await conversation_graph.stop_conversation()
+        if not stopped:
+            raise HTTPException(status_code=400, detail="No active conversation to stop")
+
+        # Cancel the running LangGraph task if it is still active
+        if conversation_task and not conversation_task.done():
+            conversation_task.cancel()
+            try:
+                await conversation_task
+            except asyncio.CancelledError:
+                logger.info("Conversation task cancelled successfully")
+
+        if snapshot_state:
+            transcript_store.persist(
+                topic=topic_snapshot,
+                participants=participants_snapshot,
+                messages=snapshot_state.get("messages", []),
+            )
+
+        conversation_task = None
+        conversation_graph.clear_state()
+
+        return {"status": "stopped", "message": "Conversation has been stopped"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error stopping conversation: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/conversation/status")

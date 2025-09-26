@@ -45,6 +45,17 @@ class LangGraphToAISDKAdapter:
                 }
             }
 
+        elif event_type == "conversation_status":
+            return {
+                "type": "conversation_status",
+                "data": {
+                    "active": event_data.get("active"),
+                    "paused": event_data.get("paused"),
+                    "participants": event_data.get("participants", []),
+                    "topic": event_data.get("topic"),
+                }
+            }
+
         elif event_type == "speaker_scheduled":
             self.active_participant = event_data.get("next_speaker")
             return {
@@ -119,6 +130,16 @@ class LangGraphToAISDKAdapter:
                 "data": {
                     "error": event_data.get("error"),
                     "participant": event_data.get("participant")
+                }
+            }
+
+        elif event_type == "conversation_end":
+            return {
+                "type": "conversation-end",
+                "data": {
+                    "message": event_data.get("message"),
+                    "participants": event_data.get("participants", []),
+                    "topic": event_data.get("topic"),
                 }
             }
 

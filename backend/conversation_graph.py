@@ -14,6 +14,7 @@ import asyncio
 import json
 from participants import create_participant_llm, get_participant_info
 import logging
+import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,12 +28,18 @@ class ConversationState(TypedDict):
     human_input_pending: bool
     conversation_paused: bool
     topic: Optional[str]
+    preferred_next_speaker: Optional[str]
+    preferred_bias_remaining: int
+    round_robin_pointer: int
 
 class ConversationGraph:
     def __init__(self):
         self.graph = self._build_graph()
         self.event_callbacks = []
         self.current_state = None
+        self.current_participants: List[str] = []
+        self.current_topic: Optional[str] = None
+        self.mention_pattern = re.compile(r"@([A-Za-z0-9_-]+)")
 
     def _build_graph(self):
         """Build the LangGraph conversation flow"""
@@ -73,23 +80,105 @@ class ConversationGraph:
             except Exception as e:
                 logger.error(f"Error in event callback: {e}")
 
+    def _extract_preferred_target(
+        self,
+        content: Optional[str],
+        participants: List[str],
+        current_speaker: Optional[str],
+    ) -> Optional[str]:
+        """Identify the next preferred speaker based on @mentions in the latest message."""
+        if not content:
+            return None
+
+        matches = self.mention_pattern.findall(content)
+        if not matches:
+            return None
+
+        for match in matches:
+            if match in participants and match != current_speaker:
+                return match
+        return None
+
+    def _apply_preferred_speaker(
+        self,
+        state: ConversationState,
+        content: Optional[str],
+        current_speaker: Optional[str],
+    ) -> ConversationState:
+        """Update state with a preferred next speaker when one is mentioned explicitly."""
+        participants = state.get("participants", [])
+        target = self._extract_preferred_target(content, participants, current_speaker)
+
+        if target:
+            state["preferred_next_speaker"] = target
+            state["preferred_bias_remaining"] = 1
+
+        return state
+
+    def _clear_preferred_speaker(self, state: ConversationState) -> ConversationState:
+        """Clear any stored preference for the next speaker."""
+        state["preferred_next_speaker"] = None
+        state["preferred_bias_remaining"] = 0
+        return state
+
     async def _schedule_next_speaker(self, state: ConversationState) -> ConversationState:
         """Determine next AI participant using round-robin"""
-        participants = state["participants"]
-        current_turn = state.get("turn_count", 0)
+        participants = state.get("participants", [])
+        if not participants:
+            self.current_state = state
+            return state
 
-        # Simple round-robin for MVP
-        next_speaker = participants[current_turn % len(participants)]
+        pointer = state.get("round_robin_pointer", 0) % len(participants)
+        round_robin_candidate = participants[pointer]
+
+        preferred = state.get("preferred_next_speaker")
+        preferred_bias = state.get("preferred_bias_remaining", 0)
+        last_speaker = state.get("current_speaker")
+
+        chosen_speaker = round_robin_candidate
+        next_pointer = (pointer + 1) % len(participants)
+        preferred_used = False
+
+        has_valid_preference = (
+            preferred
+            and preferred_bias > 0
+            and preferred in participants
+            and preferred != last_speaker
+        )
+
+        if has_valid_preference:
+            if preferred == round_robin_candidate:
+                preferred_used = True
+            else:
+                chosen_speaker = preferred
+                preferred_used = True
+                # keep pointer the same so the skipped round-robin participant speaks next
+                next_pointer = pointer
+
+        if preferred_used:
+            preferred_bias = max(preferred_bias - 1, 0)
+            if preferred_bias == 0:
+                preferred = None
+        else:
+            preferred = None
+            preferred_bias = 0
 
         await self._emit_event("speaker_scheduled", {
-            "next_speaker": next_speaker,
-            "turn": current_turn
+            "next_speaker": chosen_speaker,
+            "turn": state.get("turn_count", 0)
         })
 
-        return {
+        updated_state = {
             **state,
-            "current_speaker": next_speaker
+            "current_speaker": chosen_speaker,
+            "round_robin_pointer": next_pointer,
+            "preferred_next_speaker": preferred,
+            "preferred_bias_remaining": preferred_bias,
         }
+
+        self.current_state = updated_state
+
+        return updated_state
 
     async def _generate_ai_response(self, state: ConversationState) -> ConversationState:
         """Generate AI response for current speaker"""
@@ -142,11 +231,21 @@ class ConversationGraph:
                 "content": response_content
             })
 
-            return {
+            updated_state: ConversationState = {
                 **state,
                 "messages": messages + [ai_message],
                 "turn_count": state.get("turn_count", 0) + 1
             }
+
+            updated_state = self._apply_preferred_speaker(
+                updated_state,
+                response_content,
+                current_speaker,
+            )
+
+            self.current_state = updated_state
+
+            return updated_state
 
         except Exception as e:
             logger.error(f"Error generating AI response for {current_speaker}: {e}")
@@ -163,11 +262,15 @@ class ConversationGraph:
             )
 
             # Still increment turn count to prevent getting stuck
-            return {
+            fallback_state: ConversationState = {
                 **state,
                 "messages": messages + [error_message],
                 "turn_count": state.get("turn_count", 0) + 1
             }
+
+            self.current_state = fallback_state
+
+            return fallback_state
 
     async def _check_human_input(self, state: ConversationState) -> ConversationState:
         """Check if human wants to interject"""
@@ -249,11 +352,16 @@ class ConversationGraph:
             conversation_active=True,
             human_input_pending=False,
             conversation_paused=False,
-            topic=topic
+            topic=topic,
+            preferred_next_speaker=None,
+            preferred_bias_remaining=0,
+            round_robin_pointer=0
         )
 
         # Store current state for pause/resume control
         self.current_state = initial_state
+        self.current_participants = participants
+        self.current_topic = topic
 
         await self._emit_event("conversation_start", {
             "topic": topic,
@@ -277,10 +385,20 @@ class ConversationGraph:
             "content": content
         })
 
-        return {
+        updated_state: ConversationState = {
             **state,
             "messages": state["messages"] + [human_message]
         }
+
+        updated_state = self._apply_preferred_speaker(
+            updated_state,
+            content,
+            "Human",
+        )
+
+        self.current_state = updated_state
+
+        return updated_state
 
     def pause_conversation(self) -> bool:
         """Pause the active conversation"""
@@ -308,6 +426,35 @@ class ConversationGraph:
             return self.current_state.get("conversation_active", False)
         return False
 
+    async def stop_conversation(self, reason: str = "Conversation stopped by operator") -> bool:
+        """Gracefully end the active conversation"""
+        if not self.current_state:
+            return False
+
+        self.current_state["conversation_active"] = False
+        self.current_state["conversation_paused"] = False
+
+        await self._emit_event("conversation_end", {
+            "message": reason,
+            "participants": self.current_participants,
+            "topic": self.current_topic,
+        })
+
+        await self._emit_event("conversation_status", {
+            "active": False,
+            "paused": False,
+            "participants": self.current_participants,
+            "topic": self.current_topic,
+        })
+
+        return True
+
+    def clear_state(self) -> None:
+        """Reset runtime state after a conversation fully stops"""
+        self.current_state = None
+        self.current_participants = []
+        self.current_topic = None
+
     def add_human_message_to_state(self, content: str) -> bool:
         """Add human message directly to current conversation state"""
         if self.current_state:
@@ -321,6 +468,12 @@ class ConversationGraph:
 
             # Set flag to indicate human input was added
             self.current_state["human_input_pending"] = False
+
+            self._apply_preferred_speaker(
+                self.current_state,
+                content,
+                "Human",
+            )
 
             return True
         return False
