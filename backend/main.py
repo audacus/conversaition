@@ -63,6 +63,17 @@ async def start_conversation(request: StartConversationRequest):
             conversation_graph.start_conversation(request.topic, request.participants)
         )
 
+        # Broadcast conversation started status event
+        await conversation_streamer.handle_langgraph_event({
+            "type": "conversation_status",
+            "data": {
+                "active": True,
+                "paused": False,
+                "participants": request.participants,
+                "topic": request.topic
+            }
+        })
+
         return {
             "status": "started",
             "topic": request.topic,
@@ -88,7 +99,7 @@ async def stream_conversation():
         # Return SSE stream
         return EventSourceResponse(
             conversation_streamer.generate_sse_stream(client_queue),
-            media_type="text/plain"
+            media_type="text/event-stream"
         )
 
     except Exception as e:
@@ -138,6 +149,16 @@ async def pause_conversation():
                 "type": "conversation_paused",
                 "data": {"message": "Conversation paused"}
             })
+            # Broadcast status change event
+            await conversation_streamer.handle_langgraph_event({
+                "type": "conversation_status",
+                "data": {
+                    "active": True,
+                    "paused": True,
+                    "participants": getattr(conversation_graph, 'current_participants', ['Alice', 'Bob', 'Charlie']),
+                    "topic": getattr(conversation_graph, 'current_topic', 'Active conversation')
+                }
+            })
             return {"status": "paused", "message": "Conversation has been paused"}
         else:
             raise HTTPException(status_code=400, detail="No active conversation to pause")
@@ -155,6 +176,16 @@ async def resume_conversation():
             await conversation_streamer.handle_langgraph_event({
                 "type": "conversation_resumed",
                 "data": {"message": "Conversation resumed"}
+            })
+            # Broadcast status change event
+            await conversation_streamer.handle_langgraph_event({
+                "type": "conversation_status",
+                "data": {
+                    "active": True,
+                    "paused": False,
+                    "participants": getattr(conversation_graph, 'current_participants', ['Alice', 'Bob', 'Charlie']),
+                    "topic": getattr(conversation_graph, 'current_topic', 'Active conversation')
+                }
             })
             return {"status": "resumed", "message": "Conversation has been resumed"}
         else:

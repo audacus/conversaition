@@ -135,7 +135,7 @@ class LangGraphToAISDKAdapter:
 
     def format_for_sse(self, ai_sdk_event: Dict[str, Any]) -> str:
         """Format AI SDK event for Server-Sent Events"""
-        return f"data: {json.dumps(ai_sdk_event)}\n\n"
+        return json.dumps(ai_sdk_event)
 
 class ConversationEventStreamer:
     """Manages streaming of conversation events to SSE clients"""
