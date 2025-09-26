@@ -137,9 +137,10 @@ frontend/app/
 ### Git Commit Standards
 
 **Commit Message Format:**
-- Use short, concise one-line commit messages (50 characters or less)
+- Use short, concise one-line commit messages (80 characters or less)
 - Use imperative mood (e.g., "Add LangGraph dependencies" not "Added LangGraph dependencies")
 - Focus on what the commit does, not what was done
+- **NEVER** mention Claude Code, "Generated with", or AI attribution in commit messages
 - Examples: "Add participants config", "Fix SSE streaming", "Update conversation graph"
 
 ### Required Tools

@@ -1,5 +1,8 @@
 # conversaition
 
+**🎯 Current Status: MVP Complete + Performance Optimized**
+*Multi-AI conversation platform successfully implemented and enterprise-ready*
+
 ## Idea
 
 "Bringing multiple AIs to the table for a conversation (with a human in the loop)."
@@ -16,19 +19,18 @@
 - Conversations can start with manual user input or by tasking an AI participant to provide a conversation starter.
 
 ### AI Provider Support
-- Support for multiple AI providers:
-  - OpenAI (GPT models)
-  - Anthropic (Claude models)
-  - Google (Gemini models)
-  - Local models (configurable base URL, port, model name)
+- Support for multiple AI providers with latest available models:
+  - OpenAI (GPT models) - Currently: gpt-4.1-mini
+  - Anthropic (Claude models) - Currently: claude-sonnet-4-20250514
+  - Google (Gemini models) - Currently: gemini-2.5-flash
+  - Local models (configurable base URL, port, model name) - Future support
 
 ### Participant Management
 - Configure AIs that should be available as participants
 - Save conversation participants in a reusable pool
 - Configure participant settings:
-  - System prompt (overriding default)
+  - System prompt (includes personality, role, and expertise)
   - Temperature and other model parameters
-  - Personality profiles and expertise roles
   - Weighted priority for round-robin scheduling
 
 ### Conversation Control
@@ -437,10 +439,9 @@ class ConversationStateManager:
   "provider": "openai|anthropic|gemini|local",
   "model": "string",
   "config": {
-    "system_prompt": "string (includes personality and role definition)",
+    "system_prompt": "string (includes personality, role, and expertise definition)",
     "temperature": 0.7,
     "max_tokens": 2048,
-    "expertise": ["string"],
     "weight": 1.0
   }
 }
@@ -549,6 +550,40 @@ uvicorn[standard]==0.24.0
 - Per-user conversation limits
 - AI provider API rate limiting
 - DoS protection mechanisms
+
+## 🚀 Quick Start (MVP Complete)
+
+### Current MVP Features
+- ✅ **3 AI Participants**: Alice (analytical), Bob (creative), Charlie (contrarian)
+- ✅ **Real-time Conversation**: Multi-AI streaming with turn management
+- ✅ **Human Control**: Pause/resume conversations and inject messages
+- ✅ **Performance Optimized**: Event-driven status updates, instant UI responsiveness
+- ✅ **Latest AI Models**: gpt-4.1-mini, claude-sonnet-4-20250514, gemini-2.5-flash
+
+### Environment Setup
+```bash
+# Prerequisites: OpenAI, Anthropic, and Google API keys
+
+# Backend setup
+cd backend
+source .venv/bin/activate
+# Create .env file with your API keys:
+# OPENAI_API_KEY=your-openai-key
+# ANTHROPIC_API_KEY=your-anthropic-key
+# GOOGLE_API_KEY=your-google-key
+python main.py
+
+# Frontend setup (separate terminal)
+cd frontend
+npm run dev
+```
+
+### Test the System
+1. **Backend**: http://localhost:8000
+2. **Frontend**: http://localhost:3000
+3. **Start a conversation**: Select participants and enter a topic
+4. **Watch 3 AIs debate**: Real-time streaming responses
+5. **Human control**: Pause, inject messages, resume at any time
 
 ## Implementation Roadmap
 
