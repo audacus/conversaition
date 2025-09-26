@@ -1,3 +1,24 @@
+export type ConversationRole = 'ai' | 'human' | 'system';
+
+export interface ConversationMessage {
+  id: string;
+  participant: string;
+  content: string;
+  role: ConversationRole;
+  isStreaming: boolean;
+  complete: boolean;
+  timestamp?: string;
+}
+
+export interface AdapterMetaState {
+  currentSpeaker: string | null;
+  thinkingParticipant: string | null;
+  turn: number;
+  startedAt: string | null;
+  endedAt: string | null;
+  durationSeconds: number;
+}
+
 export interface AISDKBaseEvent<TType extends string, TData = Record<string, unknown>> {
   type: TType;
   data: TData;
@@ -16,6 +37,7 @@ export type AISDKStreamEvent =
   | AISDKBaseEvent<'conversation_status', { active?: boolean; paused?: boolean; participants?: string[]; topic?: string }>
   | AISDKBaseEvent<'conversation_paused', Record<string, unknown>>
   | AISDKBaseEvent<'conversation_resumed', Record<string, unknown>>
+  | AISDKBaseEvent<'conversation-end', { message?: string; participants?: string[]; topic?: string }>
   | AISDKBaseEvent<'error', { error?: string; participant?: string }>
   | AISDKBaseEvent<string, Record<string, unknown>>;
 

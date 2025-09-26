@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AISDKEventHandler, AISDKStreamEvent } from '../types/ai-sdk';
 import { ConnectionStatus } from '../types/sse';
 
@@ -86,17 +86,33 @@ export const useSSEStream = (options: UseSSEStreamOptions = {}) => {
     handlerRef.current = handler;
   }, []);
 
+  const connect = useCallback(
+    (handler?: AISDKEventHandler) => {
+      startStream(handler);
+    },
+    [startStream],
+  );
+
+  const disconnect = useCallback(() => {
+    stopStream();
+  }, [stopStream]);
+
   useEffect(() => {
     return () => {
       stopStream();
     };
   }, [stopStream]);
 
-  return {
-    startStream,
-    stopStream,
-    updateHandler,
-    connectionStatus,
-    isStreaming,
-  };
+  return useMemo(
+    () => ({
+      startStream,
+      stopStream,
+      connect,
+      disconnect,
+      updateHandler,
+      connectionStatus,
+      isStreaming,
+    }),
+    [startStream, stopStream, connect, disconnect, updateHandler, connectionStatus, isStreaming],
+  );
 };
