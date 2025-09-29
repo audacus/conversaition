@@ -82,21 +82,42 @@ None.
 
 ## 📝 File Changes This Session
 
+**Created (Documentation):**
+- `ARCHITECTURE.md` - System design, components, tech stack, roadmap (extracted from original README)
+- `GETTING_STARTED.md` - Installation, environment setup, troubleshooting
+- `DEVELOPMENT.md` - Development commands, testing, workflow
+- `docs/README.md` - Documentation hub with navigation
+- `docs/api/README.md` - Complete REST API reference with examples
+- `docs/adr/README.md` - Architecture Decision Records index (6 ADRs)
+- `docs/plans/README.md` - Implementation plans index
+- `docs/archive/README-original-840-lines.md` - Original README archived
+
 **Modified:**
-- `frontend/app/participants/page.tsx` - Added htmlFor attributes to form labels for accessibility
-- `frontend/tests/participants-crud.spec.ts` - Fixed test selectors and timing issues
-- `backend/participants_config.json` - Reset to clean state (Alice, Bob, Charlie only)
-- `PROGRESS.md` - Updated with test completion status
+- `README.md` - Streamlined to 133 lines (was 841 lines)
+- `CLAUDE.md` - Added documentation structure section
+- `PROGRESS.md` - Updated with documentation reorganization completion
+- `backend/main.py` - Added participants CRUD endpoints
+- `backend/participants.py` - Added validation and CRUD functions
+- `frontend/app/page.tsx` - Added visibility change listener for participant reload
 
 **Added:**
-- Playwright browsers installation
-- `@playwright/test` npm dependency
+- `frontend/app/hooks/useParticipantsApi.ts` - Hook for participants CRUD operations
+
+**Removed:**
+- `RUNNING.md` - Content migrated to GETTING_STARTED.md and DEVELOPMENT.md
+
+**Commits Created (5):**
+1. Add comprehensive documentation structure
+2. Update CLAUDE.md with documentation structure
+3. Document completion of documentation reorganization
+4. Streamline README to 133 lines
+5. Add participants CRUD API and frontend integration
 
 ## 💭 Session Notes
 
-**Environment:** Both backend and frontend servers were running during test development
-**Key Discovery:** Participant table doesn't display ID column - tests must use unique names for row lookup
-**Test Duration:** ~6 seconds for full suite (3 tests)
+**Focus:** Documentation reorganization to improve project navigation and clarity
+**Outcome:** Complete documentation structure with clear purpose for each file
+**Structure:** Root-level guides + docs/ directory with specialized content (API, ADRs, plans)
 
 ## ⚠️ Known Issues
 
