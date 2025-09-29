@@ -5,7 +5,7 @@
 
 ## 🎯 Current Status
 
-**Latest:** Playwright E2E test suite complete - all 3 tests passing for participants CRUD functionality with proper accessibility and reliable selectors.
+**Latest:** Documentation reorganization complete - streamlined structure with comprehensive guides and indexes for all documentation types.
 
 **Platform Status:**
 - ✅ Multi-AI conversation system (Alice/OpenAI, Bob/Anthropic, Charlie/Gemini)
@@ -15,8 +15,27 @@
 - ✅ Transcript persistence and analytics endpoints
 - ✅ End-to-end Playwright testing
 - ✅ Production-ready with optimal performance
+- ✅ Comprehensive documentation structure with guides and references
 
 ## ✅ Recently Completed
+
+### Documentation Reorganization Complete (September 29, 2025)
+- ✅ Created streamlined README.md (133 lines vs 841 lines original)
+- ✅ Created GETTING_STARTED.md (installation, environment setup, troubleshooting)
+- ✅ Created DEVELOPMENT.md (commands, testing, workflow)
+- ✅ Created ARCHITECTURE.md (system design, components, tech stack, roadmap)
+- ✅ Created docs/README.md (documentation hub with navigation)
+- ✅ Created docs/api/README.md (complete REST API reference with examples)
+- ✅ Created docs/adr/README.md (ADR index with 6 active decisions)
+- ✅ Created docs/plans/README.md (implementation plans index)
+- ✅ Updated CLAUDE.md with new documentation structure
+- ✅ Removed RUNNING.md (content migrated to GETTING_STARTED and DEVELOPMENT)
+- ✅ Archived original 840-line README to docs/archive/
+
+**Documentation Structure:**
+- Root docs: README, GETTING_STARTED, DEVELOPMENT, ARCHITECTURE, PROGRESS, AGENTS, CLAUDE
+- docs/: Hub, API reference, ADR index, plans index, archive
+- Clear navigation paths for all documentation needs
 
 ### Playwright Test Suite Complete (September 29, 2025)
 - ✅ Installed Playwright browsers and @playwright/test dependency
@@ -49,16 +68,7 @@
 
 ## 🔄 Currently Working On
 
-**Documentation Reorganization (In Progress)**
-- ✅ Created new streamlined README.md (133 lines vs 841 lines original)
-- ✅ Created GETTING_STARTED.md (detailed setup & troubleshooting)
-- ✅ Created DEVELOPMENT.md (testing, workflow, commands)
-- ⏳ Remaining tasks tracked in TodoWrite for next session:
-  - Create ARCHITECTURE.md from original README technical content
-  - Create docs/README.md, docs/api/README.md, docs/plans/README.md, docs/adr/README.md
-  - Update CLAUDE.md with new doc structure
-  - Remove RUNNING.md (content migrated)
-  - Archive original README for reference
+Nothing active - documentation reorganization complete.
 
 ## 🔜 Next Actions
 
@@ -172,12 +182,21 @@ python3 -m unittest backend.tests.test_conversation_graph
 
 ## 📚 Documentation
 
-- `RUNNING.md` - **How to start the application** (backend + frontend commands)
-- `CLAUDE.md` - AI agent instructions and workflow
-- `AGENTS.md` - Static project structure and conventions
-- `README.md` - Project overview and vision
-- `docs/adr/` - Architecture Decision Records
-- `docs/plans/` - Implementation plans and designs
+**Root Documentation:**
+- `README.md` - Project overview, quick start, features (133 lines)
+- `GETTING_STARTED.md` - Installation, environment setup, troubleshooting
+- `DEVELOPMENT.md` - Development commands, testing, workflow
+- `ARCHITECTURE.md` - System design, components, tech stack, roadmap
+- `PROGRESS.md` - This file - current status, recent work, next actions
+- `AGENTS.md` - Project structure and conventions (static reference)
+- `CLAUDE.md` - AI agent instructions and workflow standards
+
+**docs/ Directory:**
+- `docs/README.md` - Documentation hub with navigation
+- `docs/api/README.md` - Complete REST API reference
+- `docs/adr/README.md` - Architecture Decision Records index (6 ADRs)
+- `docs/plans/README.md` - Implementation plans index
+- `docs/archive/` - Historical documents (original README)
 
 ---
 
