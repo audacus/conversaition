@@ -67,7 +67,10 @@ Create ADR files in `docs/adr/` for major technical decisions:
 3. **List next 3 concrete actions** for continuation
 4. **Note environment setup needs**
 5. **Add file changes section** to PROGRESS.md
-6. **Create git commit** with clear, imperative message (follow Git Standards above)
+6. **Create git commits** - separate commits by concern (accessibility, tests, docs, etc.)
+   - Use short, imperative messages (follow Git Standards above)
+   - Stay in project folder - no `cd ..`
+   - One logical change per commit
 
 ## Task Management
 Use TodoWrite tool proactively for:
