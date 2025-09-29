@@ -10,9 +10,13 @@ from dotenv import load_dotenv
 from conversation_graph import conversation_graph
 from adapter import conversation_streamer
 from storage import transcript_store
+from datetime import datetime, timezone
 
 # Load environment variables
 load_dotenv()
+
+# Register streamer callback once so StrictMode reconnects don't duplicate handlers
+conversation_graph.add_event_callback(conversation_streamer.handle_langgraph_event)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -52,12 +56,6 @@ async def start_conversation(request: StartConversationRequest):
 
     try:
         logger.info(f"Starting conversation with topic: {request.topic}")
-
-        # Set up event callback to connect LangGraph to the streamer
-        async def handle_conversation_event(event):
-            await conversation_streamer.handle_langgraph_event(event)
-
-        conversation_graph.add_event_callback(handle_conversation_event)
 
         # Start conversation in background task
         conversation_task = asyncio.create_task(
@@ -207,6 +205,8 @@ async def stop_conversation():
         snapshot_state = conversation_graph.current_state
         participants_snapshot = list(conversation_graph.current_participants)
         topic_snapshot = conversation_graph.current_topic
+        started_at = conversation_graph.conversation_started_at
+        stopped_at = datetime.now(timezone.utc)
 
         stopped = await conversation_graph.stop_conversation()
         if not stopped:
@@ -229,8 +229,24 @@ async def stop_conversation():
 
         conversation_task = None
         conversation_graph.clear_state()
+        duration_seconds = None
+        if started_at:
+            duration_seconds = int((stopped_at - started_at).total_seconds())
 
-        return {"status": "stopped", "message": "Conversation has been stopped"}
+        logger.info(
+            "Conversation stopped: topic=%s participants=%s duration=%ss messages=%s",
+            topic_snapshot,
+            participants_snapshot,
+            duration_seconds,
+            len(snapshot_state.get("messages", [])) if snapshot_state else 0,
+        )
+
+        return {
+            "status": "stopped",
+            "message": "Conversation has been stopped",
+            "duration_seconds": duration_seconds,
+            "stopped_at": stopped_at.isoformat(),
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -248,6 +264,40 @@ async def get_conversation_status():
     except Exception as e:
         logger.error(f"Error getting conversation status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/transcripts")
+async def list_transcripts(limit: int = 25):
+    """List recent conversation transcripts (metadata only)."""
+    try:
+        items = transcript_store.list_transcripts(limit=limit)
+        return {"transcripts": items}
+    except Exception as e:
+        logger.error(f"Error listing transcripts: {e}")
+        raise HTTPException(status_code=500, detail="Failed to list transcripts")
+
+
+@app.get("/transcripts/{transcript_id}")
+async def get_transcript(transcript_id: str):
+    """Retrieve a stored transcript by filename."""
+    try:
+        return transcript_store.load_transcript(transcript_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Transcript not found")
+    except Exception as e:
+        logger.error(f"Error retrieving transcript {transcript_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load transcript")
+
+
+@app.get("/analytics/conversations/summary")
+async def conversation_summary(limit: int = 100):
+    """Basic analytics placeholder using persisted transcripts."""
+    try:
+        return transcript_store.summarise(limit=limit)
+    except Exception as e:
+        logger.error(f"Error building analytics summary: {e}")
+        raise HTTPException(status_code=500, detail="Failed to compute analytics summary")
+
 
 @app.get("/health")
 async def health_check():

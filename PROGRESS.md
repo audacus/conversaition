@@ -1,13 +1,23 @@
 # Conversaition - Development Progress
 
-**Date:** September 27, 2025
-**Session:** Branch Comparison Alignment - Master vs Codex
-**Status:** 🔄 **Evaluating master vs codex branches to capture best-of implementations before merge**
+**Date:** September 29, 2025
+**Session:** Codex Follow-Up Intake & Planning
+**Status:** ⏳ **New session initiated; confirming workflow guidance before resuming feature work**
 
 ## 🎯 Current Status
 
+- 🧠 **Session Start (2025-09-29 11:18 CEST):** Reviewed CLAUDE.md + PROGRESS.md to align with workflow; awaiting task direction from requester
+- ✅ **Branch Parity Check (2025-09-29 11:25 CEST):** Compared `master` vs `codex` (merge-base + tip diffs) and confirmed all Codex upgrades already landed on `master`
+- 🔬 **Conversation QA In-Progress (2025-09-29 12:30 CEST):** Running backend/front-end, capturing SSE logs, and grading participant quality against persona expectations
+- 🛠️ **Backend Fix (2025-09-29 13:05 CEST):** Patched Gemini streaming text extraction + registered SSE adapter once to eliminate duplicate emissions (retest after server restart)
+- ✅ **QA Retest (2025-09-29 13:25 CEST):** Post-restart SSE stream now single-emission; Charlie produces text (though persona fidelity still shaky) – captured in `data/transcripts/conversation-20250929T124318Z.json`
+- ✨ **Persona Reinforcement (2025-09-29 13:35 CEST):** Hardened Alice/Bob/Charlie prompts, added Gemini fallback extraction; confirmed Charlie now delivers contrarian takes (`data/transcripts/conversation-20250929T130707Z.json`)
+- 🧪 **Playwright Smoke (2025-09-29 13:45 CEST):** Added `frontend/tests/conversation-smoke.spec.ts` + config for start→pause→resume→stop validation (requires servers running)
+- 📦 **Transcript Export & Analytics Stub (2025-09-29 13:55 CEST):** New `/transcripts` + `/analytics/conversations/summary` endpoints backed by `TranscriptStore` helpers (restart backend to load)
+- 🧾 **Stop Logging (2025-09-29 14:05 CEST):** Conversation stop response now returns `duration_seconds`/`stopped_at` and logs topic, message count, runtime
+- 🧪 **Session Start (2025-09-26 16:49 CEST):** Initiated Playwright regression run against local frontend/backend to validate streaming UI stability
 - 🕘 **Session Start (2025-09-26 15:41 CEST):** Reviewed CLAUDE.md and AGENTS.md, confirming branch comparison objectives and MERGE.md deliverable
-- 🔍 **Current Focus:** Compare `master` and `codex` branches, catalog superior implementations, and prepare MERGE.md guidance
+- 🔍 **Current Focus:** Capture parity confirmation in docs and shape follow-on roadmap proposals
 - ✅ **StrictMode Validation:** Live Playwright run on Next.js dev server confirmed single EventSource connection
 - ✅ **Hook Separation Implemented:** New `useSSEStream` + `useAISDKAdapter` structure merged into master; ongoing monitoring during codex backport
 - 🛠️ **Implementation (2025-09-26 15:49 CEST):** Reapplying codex branch scheduling logic, adapter metadata, and UI polish onto `master`
@@ -24,6 +34,28 @@
 **Status:** ENTERPRISE-READY PLATFORM WITH OPTIMAL PERFORMANCE 🚀
 
 ### ✅ Recently Completed
+- **Codex Branch Alignment Verification** (September 29, 2025)
+  - ✅ Audited divergence (`git log master..codex`, `git diff master...codex`) to confirm no missing feature work on `master`
+  - ✅ Ported remaining documentation delta (`.env.example` API base URL) to keep env template in sync with code
+- **Historical Docs Archived** (September 29, 2025)
+  - ✅ Moved legacy MVP plan and merge checklist into `docs/archive/` to preserve context while decluttering repo root
+- **Conversation Quality Audit** (September 29, 2025)
+  - ✅ Captured live SSE stream + transcripts (`tmp/sse-capture-20250929.txt`, `data/transcripts/*`) for multi-topic runs
+  - ⚠️ Identified `Charlie` (Gemini) returning empty messages (no `text-delta` payloads) → contrarian voice absent
+  - ⚠️ Observed duplicate SSE events from repeated callback registration; results in noisy logs but conversation still progresses
+  - ℹ️ `Alice`/`Bob` personas mostly on-brief, but inter-agent referencing limited by missing Charlie responses
+- **Gemini Stream & SSE Handler Fix** (September 29, 2025)
+  - ✅ Normalized LangChain chunk parsing to harvest Gemini text from `.text`, `.delta`, or nested `additional_kwargs`
+  - ✅ Registered streamer callback globally to prevent StrictMode duplicate event emissions
+  - ✅ Backend/frontend restart confirmed clean SSE + Gemini output (see 13:25 QA)
+- **Persona Reinforcement & Gemini Fallback** (September 29, 2025)
+  - ✅ Strengthened system prompts to prevent persona self-corrections; emphasised contrarian voice for Charlie
+  - ✅ Added final-message fallback (`ainvoke`) when streaming chunks are empty (Gemini candidates)
+  - ✅ Verified with fresh conversation (`conversation-20250929T130707Z.json`) that Charlie now contributes substantive arguments
+- **Playwright MCP Regression Validation** (September 26, 2025)
+  - ✅ Exercised Start → Pause → Human inject → Resume → Stop flow against localhost backend/frontend using Playwright MCP browser controls
+  - ✅ Confirmed EventSource connection status indicators flip between Connected/Paused/Disconnected states as controls change
+  - ℹ️ Observed conversation holds at 8 messages after resume (no regression surfaced, captured for follow-up monitoring)
 - **Codex Feature Rebackport** (September 27, 2025)
   - ✅ Restored conversation graph state syncing with mention-driven scheduling and round-robin pointer biasing
   - ✅ Increased participant max tokens (250) and reinstated explicit `@Name` prompts to align with mention routing
@@ -229,6 +261,39 @@ curl "http://localhost:8000/conversation/status"
 - Added transcript persistence helper (`backend/storage.py`) plus local storage under `data/transcripts/`
 - Created backend unit tests (skip-safe) covering mention scheduling + stop flow (`backend/tests/test_conversation_graph.py`)
 
+## 📁 File Changes This Session (2025-09-29 Branch Parity Check)
+- **Updated `.env.example`** - Documented `NEXT_PUBLIC_API_BASE_URL` alongside backend config defaults
+- **Updated `PROGRESS.md`** - Logged parity verification outcomes, current focus, and roadmap planning notes
+- **Archived `MVP.md` & `MERGE.md`** - Relocated to `docs/archive/2025-09-29-*` to retain history without clutter
+
+## 📁 File Changes This Session (2025-09-29 Conversation Quality Audit)
+- **Added `tmp/sse-capture-20250929.txt`** - Raw SSE event stream for crisis-response topic run
+- **New transcripts** (`data/transcripts/conversation-20250929T100549Z.json`, `...T120853Z.json`, `...T122013Z.json`, `...T122314Z.json`) - Captured artifacts for qualitative review
+- **Updated `PROGRESS.md`** - Documented findings, risks, and follow-up actions for conversation health
+
+## 📁 File Changes This Session (2025-09-29 Streaming Fixes)
+- **Updated `backend/main.py`** - Register SSE adapter once during startup to avoid duplicate event callbacks per StrictMode mount
+- **Updated `backend/conversation_graph.py`** - Added provider-agnostic chunk text extraction so Gemini responses stream correctly
+- **Updated `PROGRESS.md`** - Logged backend fix and pending validation steps
+
+## 📁 File Changes This Session (2025-09-29 Persona Reinforcement)
+- **Updated `backend/participants.py`** - Hardened persona prompts to prevent self-identity drift and encourage contrarian engagement
+- **Updated `backend/conversation_graph.py`** - Added Gemini candidate parsing + final fallback invoke when streaming payloads are empty
+- **New transcripts** (`data/transcripts/conversation-20250929T130150Z.json`, `...T130352Z.json`, `...T130516Z.json`, `...T130707Z.json`) - Post-fix samples showing improved Charlie output
+
+## 📁 File Changes This Session (2025-09-29 Playwright Smoke)
+- **Updated `frontend/package.json`** - Added `@playwright/test` dev dependency + `test:e2e` script
+- **Created `frontend/playwright.config.ts`** - BaseURL-aware Playwright config with retained traces
+- **Created `frontend/tests/conversation-smoke.spec.ts`** - Start/Pause/Resume/Stop smoke exercising live SSE stream (requires servers running)
+
+## 📁 File Changes This Session (2025-09-29 Transcript Export)
+- **Updated `backend/storage.py`** - Added listing/loading helpers and analytics summariser for persisted transcripts
+- **Updated `backend/main.py`** - Exposed `/transcripts`, `/transcripts/{id}`, and `/analytics/conversations/summary` endpoints
+
+## 📁 File Changes This Session (2025-09-29 Stop Logging)
+- **Updated `backend/conversation_graph.py`** - Carries start/end timestamps in `conversation_end` events, resets timers on clear
+- **Updated `backend/main.py`** - Logs topic/duration/message counts and surfaces `duration_seconds` in stop response
+
 ## 📁 File Changes This Session (SSE Duplication Fix)
 - **Created `frontend/app/hooks/useAISDKAdapter.ts`** - Dedicated AI SDK event processing hook with message/status normalization
 - **Updated `frontend/app/hooks/useSSEStream.ts`** - EventSource lifecycle only, handler registry, StrictMode-safe guards
@@ -264,11 +329,12 @@ curl "http://localhost:8000/conversation/status"
 - Created `docs/adr/002-langgraph-multi-agent-patterns.md` - Multi-agent conversation patterns
 
 ---
-**Next Session:** (1) Introduce frontend Playwright smoke for stop/pause/resume + StrictMode mount behaviour, (2) Build transcript loading/export endpoint and basic analytics rollups, (3) Wire conversation duration + stop events into server-side logging/metrics pipeline
+**Next Session:** (0) Confirm priority focus with requester before implementation, (1) Evaluate model tier upgrades after persona reinforcement (e.g., `gemini-2.5-pro`, `gpt-o4-mini`) for deeper debate, (2) Introduce frontend Playwright smoke for start/pause/resume/stop + StrictMode remount, (3) Build transcript loading/export endpoint and basic analytics rollups, (4) Wire conversation duration + stop events into server-side logging/metrics pipeline
 
 **Testing Notes:**
 - Backend unit scaffolding: `python3 -m unittest backend.tests.test_conversation_graph` (skips if LangGraph deps unavailable)
 - Frontend lint: `cd frontend && npm run lint`
+- Frontend Playwright MCP smoke: use browser controls to run Start/Pause/Resume/Stop flow against http://localhost:3000 (backend at http://localhost:8000)
 
 **Completed:** Enterprise-ready Conversaition platform with optimal performance! 🚀
 

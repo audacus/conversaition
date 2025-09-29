@@ -15,6 +15,7 @@ import json
 from participants import create_participant_llm, get_participant_info
 import logging
 import re
+from datetime import datetime, timezone
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ class ConversationGraph:
         self.current_state = None
         self.current_participants: List[str] = []
         self.current_topic: Optional[str] = None
+        self.conversation_started_at: Optional[datetime] = None
         self.mention_pattern = re.compile(r"@([A-Za-z0-9_-]+)")
 
     def _build_graph(self):
@@ -180,6 +182,132 @@ class ConversationGraph:
 
         return updated_state
 
+    def _extract_chunk_text(self, chunk: Any) -> str:
+        """Normalize streamed chunk payloads across providers into plain text."""
+        # Most LangChain chunks expose `.content`; handle strings and structured lists
+        content = getattr(chunk, "content", None)
+        if isinstance(content, str) and content:
+            return content
+
+        if isinstance(content, list):
+            pieces: List[str] = []
+            for part in content:
+                if isinstance(part, str):
+                    pieces.append(part)
+                elif isinstance(part, dict):
+                    text_value = part.get("text") or part.get("content")
+                    if isinstance(text_value, str):
+                        pieces.append(text_value)
+            if pieces:
+                return "".join(pieces)
+
+        # Gemini chunks often populate `.text`
+        text_attr = getattr(chunk, "text", None)
+        if isinstance(text_attr, str) and text_attr:
+            return text_attr
+
+        # Some providers use `.delta`
+        delta = getattr(chunk, "delta", None)
+        if isinstance(delta, dict):
+            delta_text = delta.get("text") or delta.get("content")
+            if isinstance(delta_text, str) and delta_text:
+                return delta_text
+
+        # Fall back to additional kwargs payloads
+        additional = getattr(chunk, "additional_kwargs", None)
+        if isinstance(additional, dict):
+            direct = additional.get("text") or additional.get("content")
+            if isinstance(direct, str) and direct:
+                return direct
+            if isinstance(direct, list):
+                pieces = [p for p in direct if isinstance(p, str)]
+                if pieces:
+                    return "".join(pieces)
+
+            candidates = additional.get("candidates")
+            if isinstance(candidates, list):
+                candidate_pieces: List[str] = []
+                for candidate in candidates:
+                    if not isinstance(candidate, dict):
+                        continue
+                    content_block = candidate.get("content")
+                    if isinstance(content_block, dict):
+                        parts = content_block.get("parts")
+                        if isinstance(parts, list):
+                            for part in parts:
+                                if isinstance(part, dict):
+                                    text_value = part.get("text") or part.get("content")
+                                    if isinstance(text_value, str):
+                                        candidate_pieces.append(text_value)
+                    text_snippet = candidate.get("text")
+                    if isinstance(text_snippet, str):
+                        candidate_pieces.append(text_snippet)
+                if candidate_pieces:
+                    return "".join(candidate_pieces)
+
+            parts = additional.get("parts")
+            if isinstance(parts, list):
+                pieces: List[str] = []
+                for part in parts:
+                    if isinstance(part, dict):
+                        text_value = part.get("text") or part.get("content")
+                        if isinstance(text_value, str):
+                            pieces.append(text_value)
+                if pieces:
+                    return "".join(pieces)
+
+        return ""
+
+    def _coalesce_message_content(self, message: Any) -> str:
+        """Extract text content from a final AIMessage result."""
+        content = getattr(message, "content", None)
+        if isinstance(content, str) and content:
+            return content
+        if isinstance(content, list):
+            pieces: List[str] = []
+            for entry in content:
+                if isinstance(entry, str):
+                    pieces.append(entry)
+                elif isinstance(entry, dict):
+                    text_value = entry.get("text") or entry.get("content")
+                    if isinstance(text_value, str):
+                        pieces.append(text_value)
+            if pieces:
+                return "".join(pieces)
+
+        additional = getattr(message, "additional_kwargs", None)
+        if isinstance(additional, dict):
+            direct = additional.get("text") or additional.get("content")
+            if isinstance(direct, str) and direct:
+                return direct
+            if isinstance(direct, list):
+                pieces = [p for p in direct if isinstance(p, str)]
+                if pieces:
+                    return "".join(pieces)
+
+            candidates = additional.get("candidates")
+            if isinstance(candidates, list):
+                candidate_pieces: List[str] = []
+                for candidate in candidates:
+                    if not isinstance(candidate, dict):
+                        continue
+                    text_snippet = candidate.get("text")
+                    if isinstance(text_snippet, str):
+                        candidate_pieces.append(text_snippet)
+                    content_block = candidate.get("content")
+                    if isinstance(content_block, dict):
+                        parts = content_block.get("parts")
+                        if isinstance(parts, list):
+                            for part in parts:
+                                if isinstance(part, dict):
+                                    text_value = part.get("text") or part.get("content")
+                                    if isinstance(text_value, str):
+                                        candidate_pieces.append(text_value)
+                if candidate_pieces:
+                    return "".join(candidate_pieces)
+
+        return ""
+
     async def _generate_ai_response(self, state: ConversationState) -> ConversationState:
         """Generate AI response for current speaker"""
         current_speaker = state["current_speaker"]
@@ -212,11 +340,27 @@ class ConversationGraph:
 
             response_content = ""
             async for chunk in llm.astream(conversation_messages):
-                if chunk.content:
-                    response_content += chunk.content
+                chunk_text = self._extract_chunk_text(chunk)
+                if not chunk_text:
+                    if current_speaker == "Charlie":
+                        logger.warning(f"Charlie produced empty chunk: {chunk!r}")
+                    continue
+
+                response_content += chunk_text
+                await self._emit_event("ai_response_stream", {
+                    "participant": current_speaker,
+                    "content": chunk_text,
+                    "full_content": response_content
+                })
+
+            if not response_content:
+                fallback_message = await llm.ainvoke(conversation_messages)
+                fallback_text = self._coalesce_message_content(fallback_message)
+                if fallback_text:
+                    response_content = fallback_text
                     await self._emit_event("ai_response_stream", {
                         "participant": current_speaker,
-                        "content": chunk.content,
+                        "content": fallback_text,
                         "full_content": response_content
                     })
 
@@ -362,6 +506,7 @@ class ConversationGraph:
         self.current_state = initial_state
         self.current_participants = participants
         self.current_topic = topic
+        self.conversation_started_at = datetime.now(timezone.utc)
 
         await self._emit_event("conversation_start", {
             "topic": topic,
@@ -434,10 +579,19 @@ class ConversationGraph:
         self.current_state["conversation_active"] = False
         self.current_state["conversation_paused"] = False
 
+        ended_at = datetime.now(timezone.utc)
+        started_at = self.conversation_started_at
+        duration_seconds = None
+        if started_at:
+            duration_seconds = int((ended_at - started_at).total_seconds())
+
         await self._emit_event("conversation_end", {
             "message": reason,
             "participants": self.current_participants,
             "topic": self.current_topic,
+            "started_at": started_at.isoformat() if started_at else None,
+            "ended_at": ended_at.isoformat(),
+            "duration_seconds": duration_seconds,
         })
 
         await self._emit_event("conversation_status", {
@@ -454,6 +608,7 @@ class ConversationGraph:
         self.current_state = None
         self.current_participants = []
         self.current_topic = None
+        self.conversation_started_at = None
 
     def add_human_message_to_state(self, content: str) -> bool:
         """Add human message directly to current conversation state"""
