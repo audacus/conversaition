@@ -280,6 +280,7 @@ curl "http://localhost:8000/conversation/status"
 - **Updated `backend/participants.py`** - Personas now load from `participants_config.json` so additional participants can be added without code edits
 - **Added `backend/participants_config.json`** - Default pool (Alice/Bob/Charlie) with persona prompts and model settings
 - **Updated `backend/conversation_graph.py`** - Added Gemini candidate parsing + final fallback invoke when streaming payloads are empty
+- **Updated `frontend/app/page.tsx` & hooks** - Frontend now fetches participants dynamically, enabling configurable rosters beyond the core three
 - **New transcripts** (`data/transcripts/conversation-20250929T130150Z.json`, `...T130352Z.json`, `...T130516Z.json`, `...T130707Z.json`) - Post-fix samples showing improved Charlie output
 
 ## 📁 File Changes This Session (2025-09-29 Playwright Smoke)

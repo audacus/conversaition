@@ -9,6 +9,13 @@ export interface ConversationStatus {
   current_topic?: string;
 }
 
+export interface ParticipantSummary {
+  id: string;
+  name: string;
+  provider?: string;
+  model?: string;
+}
+
 const DEFAULT_API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
 
 export const useConversationApi = (baseUrl: string = DEFAULT_API_BASE) => {
@@ -55,7 +62,7 @@ export const useConversationApi = (baseUrl: string = DEFAULT_API_BASE) => {
 
   const startConversation = useCallback(async (
     topic: string,
-    participants: string[] = ['Alice', 'Bob', 'Charlie']
+    participants: string[]
   ) => {
     const result = await handleApiCall('/conversation/start', {
       method: 'POST',
@@ -99,6 +106,11 @@ export const useConversationApi = (baseUrl: string = DEFAULT_API_BASE) => {
     return result;
   }, [handleApiCall]);
 
+  const getParticipants = useCallback(async (): Promise<ParticipantSummary[]> => {
+    const result = await handleApiCall('/participants');
+    return (result?.participants ?? []) as ParticipantSummary[];
+  }, [handleApiCall]);
+
   return {
     // State
     status,
@@ -112,5 +124,6 @@ export const useConversationApi = (baseUrl: string = DEFAULT_API_BASE) => {
     stopConversation,
     sendMessage,
     getStatus,
+    getParticipants,
   };
 };

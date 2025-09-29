@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from conversation_graph import conversation_graph
 from adapter import conversation_streamer
 from storage import transcript_store
+from participants import get_all_participants
 from datetime import datetime, timezone
 
 # Load environment variables
@@ -305,6 +306,27 @@ async def conversation_summary(limit: int = 100):
     except Exception as e:
         logger.error(f"Error building analytics summary: {e}")
         raise HTTPException(status_code=500, detail="Failed to compute analytics summary")
+
+
+@app.get("/participants")
+async def list_participants():
+    """Expose available participant definitions for the frontend."""
+    try:
+        participants = get_all_participants()
+        return {
+            "participants": [
+                {
+                    "id": pid,
+                    "name": data.get("name", pid),
+                    "provider": data.get("provider"),
+                    "model": data.get("model"),
+                }
+                for pid, data in participants.items()
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Error loading participants: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load participants")
 
 
 @app.get("/health")

@@ -1,15 +1,13 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { useConversationApi } from './hooks/useConversationApi';
+import { ParticipantSummary, useConversationApi } from './hooks/useConversationApi';
 import { useSSEStream } from './hooks/useSSEStream';
 import { useAISDKAdapter } from './hooks/useAISDKAdapter';
 import type { AISDKStreamEvent } from './types/ai-sdk';
 
 const DEFAULT_TOPIC = 'Should AI have creative rights?';
-const PARTICIPANT_OPTIONS = ['Alice', 'Bob', 'Charlie'] as const;
-
 const avatarMap: Record<string, string> = {
   Alice: '/Alice.svg',
   Bob: '/Bob.svg',
@@ -55,7 +53,10 @@ const formatTimestamp = (timestamp?: string) => {
 export default function Home() {
   const [topic, setTopic] = useState(DEFAULT_TOPIC);
   const [humanMessage, setHumanMessage] = useState('');
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([...PARTICIPANT_OPTIONS]);
+  const [availableParticipants, setAvailableParticipants] = useState<ParticipantSummary[]>([]);
+  const [participantsLoading, setParticipantsLoading] = useState(true);
+  const [participantsError, setParticipantsError] = useState<string | null>(null);
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [streamError, setStreamError] = useState<string | null>(null);
 
   const rawApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
@@ -71,6 +72,7 @@ export default function Home() {
     resumeConversation,
     stopConversation,
     sendMessage,
+    getParticipants,
   } = useConversationApi(apiBaseUrl);
 
   const {
@@ -81,6 +83,37 @@ export default function Home() {
     applyStatus,
     reset,
   } = useAISDKAdapter();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        setParticipantsLoading(true);
+        setParticipantsError(null);
+        const response = await getParticipants();
+        if (cancelled) {
+          return;
+        }
+        setAvailableParticipants(response);
+        setSelectedParticipants((previous) => (previous.length ? previous : response.map((participant) => participant.id)));
+      } catch (error) {
+        if (!cancelled) {
+          const message = error instanceof Error ? error.message : 'Failed to load participants';
+          setParticipantsError(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setParticipantsLoading(false);
+        }
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [getParticipants]);
 
   const handleStreamEvent = useCallback(
     (event: AISDKStreamEvent) => {
@@ -104,6 +137,14 @@ export default function Home() {
     isStreaming,
   } = useSSEStream({ url: `${apiBaseUrl}/conversation/stream`, onError: handleSSEError });
 
+  const participantNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    availableParticipants.forEach((participant) => {
+      map.set(participant.id, participant.name);
+    });
+    return map;
+  }, [availableParticipants]);
+
   const isConversationActive = conversationStatus.active;
   const isConversationPaused = conversationStatus.paused;
   const hasSelectedParticipants = selectedParticipants.length > 0;
@@ -112,7 +153,11 @@ export default function Home() {
     ? conversationStatus.participants
     : selectedParticipants;
 
-  const canStartConversation = !isConversationActive && !apiLoading && hasSelectedParticipants;
+  const currentParticipantNames = currentParticipants.map((id) => participantNameById.get(id) ?? id);
+
+  const allParticipantsLoaded = !participantsLoading && availableParticipants.length > 0;
+
+  const canStartConversation = allParticipantsLoaded && !isConversationActive && !apiLoading && hasSelectedParticipants;
   const trimmedHumanMessage = humanMessage.trim();
   const canSendHumanMessage = isConversationPaused && trimmedHumanMessage.length > 0;
 
@@ -324,21 +369,35 @@ export default function Home() {
                 <span className="block text-sm font-medium text-gray-700 mb-1">
                   Participants
                 </span>
+                {participantsLoading && (
+                  <div className="text-sm text-gray-500">Loading participants…</div>
+                )}
+                {participantsError && (
+                  <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {participantsError}
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-3">
-                  {PARTICIPANT_OPTIONS.map(participant => (
-                    <label key={participant} className="flex items-center space-x-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={selectedParticipants.includes(participant)}
-                        disabled={isConversationActive}
-                        onChange={(event) => handleParticipantToggle(participant, event.target.checked)}
-                        className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
-                      />
-                      <span className={`px-2 py-1 border rounded ${participantBadgeClassMap[participant]}`}>
-                        {participant}
-                      </span>
-                    </label>
-                  ))}
+                  {availableParticipants.map((participant) => {
+                    const badgeClass = participantBadgeClassMap[participant.id] ?? 'bg-gray-100 border-gray-300 text-gray-800';
+                    return (
+                      <label key={participant.id} className="flex items-center space-x-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedParticipants.includes(participant.id)}
+                          disabled={isConversationActive || participantsLoading}
+                          onChange={(event) => handleParticipantToggle(participant.id, event.target.checked)}
+                          className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+                        />
+                        <span className={`px-2 py-1 border rounded ${badgeClass}`}>
+                          {participant.name}
+                        </span>
+                      </label>
+                    );
+                  })}
+                  {!participantsLoading && !participantsError && availableParticipants.length === 0 && (
+                    <span className="text-sm text-gray-500">No participants configured.</span>
+                  )}
                 </div>
               </div>
             </div>
