@@ -10,7 +10,13 @@ from dotenv import load_dotenv
 from conversation_graph import conversation_graph
 from adapter import conversation_streamer
 from storage import transcript_store
-from participants import get_all_participants
+from participants import (
+    get_all_participants,
+    get_participant_info,
+    create_participant,
+    update_participant,
+    delete_participant,
+)
 from datetime import datetime, timezone
 
 # Load environment variables
@@ -45,6 +51,15 @@ class StartConversationRequest(BaseModel):
 
 class AddMessageRequest(BaseModel):
     content: str
+
+class ParticipantRequest(BaseModel):
+    id: str
+    name: str
+    provider: str
+    model: str
+    temperature: float = 0.7
+    max_tokens: int = 256
+    system_prompt: str
 
 # Global conversation state
 active_conversation = None
@@ -320,6 +335,8 @@ async def list_participants():
                     "name": data.get("name", pid),
                     "provider": data.get("provider"),
                     "model": data.get("model"),
+                    "temperature": data.get("temperature"),
+                    "max_tokens": data.get("max_tokens"),
                 }
                 for pid, data in participants.items()
             ]
@@ -327,6 +344,63 @@ async def list_participants():
     except Exception as e:
         logger.error(f"Error loading participants: {e}")
         raise HTTPException(status_code=500, detail="Failed to load participants")
+
+
+@app.get("/participants/{participant_id}")
+async def get_participant(participant_id: str):
+    """Get full details for a single participant."""
+    try:
+        participant = get_participant_info(participant_id)
+        return participant
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error retrieving participant {participant_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve participant")
+
+
+@app.post("/participants")
+async def create_new_participant(request: ParticipantRequest):
+    """Create a new participant and persist to config."""
+    try:
+        participant_data = request.model_dump()
+        new_participant = create_participant(participant_data)
+        logger.info(f"Created participant: {new_participant['id']}")
+        return {"status": "created", "participant": new_participant}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error creating participant: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create participant")
+
+
+@app.put("/participants/{participant_id}")
+async def update_existing_participant(participant_id: str, request: ParticipantRequest):
+    """Update an existing participant and persist to config."""
+    try:
+        participant_data = request.model_dump()
+        updated_participant = update_participant(participant_id, participant_data)
+        logger.info(f"Updated participant: {participant_id}")
+        return {"status": "updated", "participant": updated_participant}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error updating participant {participant_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update participant")
+
+
+@app.delete("/participants/{participant_id}")
+async def delete_existing_participant(participant_id: str):
+    """Delete a participant and persist to config."""
+    try:
+        delete_participant(participant_id)
+        logger.info(f"Deleted participant: {participant_id}")
+        return {"status": "deleted", "participant_id": participant_id}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error deleting participant {participant_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete participant")
 
 
 @app.get("/health")

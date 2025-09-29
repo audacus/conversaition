@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ParticipantSummary, useConversationApi } from './hooks/useConversationApi';
 import { useSSEStream } from './hooks/useSSEStream';
 import { useAISDKAdapter } from './hooks/useAISDKAdapter';
@@ -84,6 +85,7 @@ export default function Home() {
     reset,
   } = useAISDKAdapter();
 
+  // Load participants on mount and when page becomes visible (after editing participants)
   useEffect(() => {
     let cancelled = false;
 
@@ -110,8 +112,19 @@ export default function Home() {
     };
 
     load();
+
+    // Reload participants when page becomes visible (e.g., after editing participants)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        load();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       cancelled = true;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [getParticipants]);
 
@@ -137,14 +150,6 @@ export default function Home() {
     isStreaming,
   } = useSSEStream({ url: `${apiBaseUrl}/conversation/stream`, onError: handleSSEError });
 
-  const participantNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    availableParticipants.forEach((participant) => {
-      map.set(participant.id, participant.name);
-    });
-    return map;
-  }, [availableParticipants]);
-
   const isConversationActive = conversationStatus.active;
   const isConversationPaused = conversationStatus.paused;
   const hasSelectedParticipants = selectedParticipants.length > 0;
@@ -152,8 +157,6 @@ export default function Home() {
   const currentParticipants = conversationStatus.participants.length
     ? conversationStatus.participants
     : selectedParticipants;
-
-  const currentParticipantNames = currentParticipants.map((id) => participantNameById.get(id) ?? id);
 
   const allParticipantsLoaded = !participantsLoading && availableParticipants.length > 0;
 
@@ -298,9 +301,19 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-5xl mx-auto px-4 space-y-6">
-        <header className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900">Conversaition</h1>
-          <p className="text-gray-600">Multi-AI conversation platform with human-in-the-loop guidance</p>
+        <header className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-center flex-1">
+              <h1 className="text-3xl font-bold text-gray-900">Conversaition</h1>
+              <p className="text-gray-600">Multi-AI conversation platform with human-in-the-loop guidance</p>
+            </div>
+            <Link
+              href="/participants"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              Manage Participants
+            </Link>
+          </div>
         </header>
 
       <section className="bg-white rounded-lg shadow p-5 space-y-4">
