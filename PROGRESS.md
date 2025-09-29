@@ -283,6 +283,9 @@ curl "http://localhost:8000/conversation/status"
 - **Updated `frontend/app/page.tsx` & hooks** - Frontend now fetches participants dynamically, enabling configurable rosters beyond the core three
 - **New transcripts** (`data/transcripts/conversation-20250929T130150Z.json`, `...T130352Z.json`, `...T130516Z.json`, `...T130707Z.json`) - Post-fix samples showing improved Charlie output
 
+## 📁 File Changes This Session (2025-09-29 Participants Plan)
+- **Created `docs/plans/participants-ui.md`** - Implementation blueprint for participant pool management UI (CRUD + UX scope)
+
 ## 📁 File Changes This Session (2025-09-29 Playwright Smoke)
 - **Updated `frontend/package.json`** - Added `@playwright/test` dev dependency + `test:e2e` script
 - **Created `frontend/playwright.config.ts`** - BaseURL-aware Playwright config with retained traces
@@ -331,7 +334,7 @@ curl "http://localhost:8000/conversation/status"
 - Created `docs/adr/002-langgraph-multi-agent-patterns.md` - Multi-agent conversation patterns
 
 ---
-**Next Session:** (0) Confirm priority focus with requester before implementation, (1) Evaluate model tier upgrades after persona reinforcement (e.g., `gemini-2.5-pro`, `gpt-o4-mini`) for deeper debate, (2) Introduce frontend Playwright smoke for start/pause/resume/stop + StrictMode remount, (3) Build transcript loading/export endpoint and basic analytics rollups, (4) Wire conversation duration + stop events into server-side logging/metrics pipeline
+**Next Session:** (0) Confirm priority focus with requester before implementation, (1) Implement participant management UI per plan (`docs/plans/participants-ui.md`), (2) Evaluate model tier upgrades after persona reinforcement (e.g., `gemini-2.5-pro`, `gpt-o4-mini`) for deeper debate, (3) Surface analytics/transcripts in frontend dashboard, (4) Integrate Playwright smoke (`npm run test:e2e`) into CI pipeline
 
 **Testing Notes:**
 - Backend unit scaffolding: `python3 -m unittest backend.tests.test_conversation_graph` (skips if LangGraph deps unavailable)
