@@ -24,14 +24,10 @@ Required format:
 - Update "Next Steps" for future work
 
 ### Architecture Decision Records
-Create ADR files in `docs/adr/` for major technical decisions:
-```
-# [Number] - [Title]
-**Date:** YYYY-MM-DD
-**Status:** [Proposed|Accepted|Deprecated]
+Create ADR files in `docs/adr/` for major technical decisions. See `docs/adr/README.md` for current ADRs and template format.
 
-## Context / ## Decision / ## Consequences
-```
+### Implementation Plans
+Document new features in `docs/plans/` before implementation. See `docs/plans/README.md` for active plans and template format.
 
 ## Code Quality Standards
 
@@ -86,3 +82,29 @@ Mark todos complete immediately after finishing tasks.
 - Answer directly without unnecessary preamble
 - Focus on the specific task at hand
 - Use TodoWrite to demonstrate progress tracking
+
+## Documentation Structure
+
+### Root Documentation
+- **README.md** - Project overview, quick start, features (133 lines)
+- **GETTING_STARTED.md** - Installation, environment setup, troubleshooting
+- **DEVELOPMENT.md** - Development commands, testing, workflow
+- **ARCHITECTURE.md** - System design, components, tech stack, roadmap
+- **PROGRESS.md** - Current status, recent work, next actions, session notes
+- **AGENTS.md** - Project structure and conventions (static reference)
+- **CLAUDE.md** - This file - AI agent instructions
+
+### docs/ Directory
+- **docs/README.md** - Documentation hub and navigation
+- **docs/adr/README.md** - Architecture Decision Records index
+- **docs/api/README.md** - Complete API endpoint documentation
+- **docs/plans/README.md** - Implementation plans and feature specs
+- **docs/archive/** - Historical documents and archived plans
+
+### Quick Reference
+- Setup issues → GETTING_STARTED.md
+- Running commands → DEVELOPMENT.md
+- System design → ARCHITECTURE.md
+- Current work → PROGRESS.md
+- API details → docs/api/README.md
+- Design decisions → docs/adr/README.md
