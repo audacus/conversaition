@@ -66,7 +66,8 @@ Create ADR files in `docs/adr/` for major technical decisions:
 2. **Document any blockers** clearly
 3. **List next 3 concrete actions** for continuation
 4. **Note environment setup needs**
-5. **Commit/save work** appropriately
+5. **Add file changes section** to PROGRESS.md
+6. **Create git commit** with clear, imperative message (follow Git Standards above)
 
 ## Task Management
 Use TodoWrite tool proactively for:
