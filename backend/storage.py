@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable, Mapping, Any, List, Dict
+from typing import Iterable, Mapping, Any, List, Dict, Optional
 from collections import Counter
 
 from langchain_core.messages import BaseMessage
@@ -24,7 +24,14 @@ class TranscriptStore:
             "metadata": getattr(message, "additional_kwargs", {}),
         }
 
-    def persist(self, *, topic: str | None, participants: Iterable[str], messages: Iterable[BaseMessage]) -> Path:
+    def persist(
+        self,
+        *,
+        topic: str | None,
+        participants: Iterable[str],
+        messages: Iterable[BaseMessage],
+        metadata: Optional[Mapping[str, Any]] = None,
+    ) -> Path:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         payload = {
             "topic": topic,
@@ -32,6 +39,9 @@ class TranscriptStore:
             "created_at": timestamp,
             "messages": [self._serialise_message(message) for message in messages],
         }
+
+        if metadata:
+            payload["metadata"] = dict(metadata)
 
         file_path = self.base_path / f"conversation-{timestamp}.json"
         file_path.write_text(json.dumps(payload, ensure_ascii=True, indent=2))
@@ -52,6 +62,7 @@ class TranscriptStore:
                 "participants": data.get("participants", []),
                 "created_at": data.get("created_at"),
                 "message_count": len(data.get("messages", [])),
+                "metadata": data.get("metadata", {}),
             })
         return transcripts
 
@@ -67,6 +78,8 @@ class TranscriptStore:
         participant_counter: Counter[str] = Counter()
         total_messages = 0
         topics = []
+        total_duration = 0
+        duration_samples = 0
 
         for entry in transcripts:
             total_messages += entry.get("message_count", 0)
@@ -74,11 +87,19 @@ class TranscriptStore:
             for participant in entry.get("participants", []):
                 participant_counter[participant] += 1
 
+            metadata = entry.get("metadata") or {}
+            if isinstance(metadata, dict):
+                duration = metadata.get("duration_seconds")
+                if isinstance(duration, (int, float)) and duration >= 0:
+                    total_duration += duration
+                    duration_samples += 1
+
         return {
             "total_transcripts": len(transcripts),
             "total_messages": total_messages,
             "participant_appearances": dict(participant_counter),
             "latest_topic": topics[0] if topics else None,
+            "average_duration_seconds": (total_duration / duration_samples) if duration_samples else None,
         }
 
 

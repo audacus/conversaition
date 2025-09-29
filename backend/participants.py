@@ -70,32 +70,64 @@ Communication rules:
     }
 }
 
+def _coerce_float(value: str | None, default: float) -> float:
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _coerce_int(value: str | None, default: int) -> int:
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _resolve_model_config(participant_name: str, config: Dict[str, Any]) -> Dict[str, Any]:
+    prefix = participant_name.upper()
+    model = os.getenv(f"{prefix}_MODEL", config["model"])
+    temperature = _coerce_float(os.getenv(f"{prefix}_TEMPERATURE"), config["config"]["temperature"])
+    max_tokens = _coerce_int(os.getenv(f"{prefix}_MAX_TOKENS"), config["config"]["max_tokens"])
+
+    return {
+        "model": model,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+    }
+
+
 def create_participant_llm(participant_name: str):
     """Create LangChain LLM instance for a participant"""
     if participant_name not in PARTICIPANTS:
         raise ValueError(f"Unknown participant: {participant_name}")
 
     config = PARTICIPANTS[participant_name]
+    resolved = _resolve_model_config(participant_name, config)
 
     if config["provider"] == "openai":
         return ChatOpenAI(
-            model=config["model"],
-            temperature=config["config"]["temperature"],
-            max_tokens=config["config"]["max_tokens"],
+            model=resolved["model"],
+            temperature=resolved["temperature"],
+            max_tokens=resolved["max_tokens"],
             api_key=os.getenv("OPENAI_API_KEY")
         )
     elif config["provider"] == "anthropic":
         return ChatAnthropic(
-            model=config["model"],
-            temperature=config["config"]["temperature"],
-            max_tokens=config["config"]["max_tokens"],
+            model=resolved["model"],
+            temperature=resolved["temperature"],
+            max_tokens=resolved["max_tokens"],
             api_key=os.getenv("ANTHROPIC_API_KEY")
         )
     elif config["provider"] == "gemini":
         return ChatGoogleGenerativeAI(
-            model=config["model"],
-            temperature=config["config"]["temperature"],
-            max_output_tokens=config["config"]["max_tokens"],
+            model=resolved["model"],
+            temperature=resolved["temperature"],
+            max_output_tokens=resolved["max_tokens"],
             api_key=os.getenv("GOOGLE_API_KEY")
         )
     else:

@@ -278,6 +278,7 @@ curl "http://localhost:8000/conversation/status"
 
 ## 📁 File Changes This Session (2025-09-29 Persona Reinforcement)
 - **Updated `backend/participants.py`** - Hardened persona prompts to prevent self-identity drift and encourage contrarian engagement
+- **Updated `backend/participants.py`** - Added env overrides (`ALICE_MODEL`, etc.) for rapid model tier experiments
 - **Updated `backend/conversation_graph.py`** - Added Gemini candidate parsing + final fallback invoke when streaming payloads are empty
 - **New transcripts** (`data/transcripts/conversation-20250929T130150Z.json`, `...T130352Z.json`, `...T130516Z.json`, `...T130707Z.json`) - Post-fix samples showing improved Charlie output
 
@@ -363,3 +364,4 @@ curl "http://localhost:8000/conversation/status"
 - ✅ Production APIs with proper error handling
 - ✅ Visual status indicators and participant color coding
 - ✅ End-to-end tested and validated system
+- ⚙️ **Model Override Controls (2025-09-29 14:20 CEST):** Participant env overrides (`ALICE_MODEL`, etc.) unlock quick trials of `gpt-o4-mini`, `gemini-2.5-pro` without code edits

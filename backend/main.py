@@ -220,11 +220,19 @@ async def stop_conversation():
             except asyncio.CancelledError:
                 logger.info("Conversation task cancelled successfully")
 
+        message_count = len(snapshot_state.get("messages", [])) if snapshot_state else 0
+
         if snapshot_state:
             transcript_store.persist(
                 topic=topic_snapshot,
                 participants=participants_snapshot,
                 messages=snapshot_state.get("messages", []),
+                metadata={
+                    "duration_seconds": duration_seconds,
+                    "started_at": started_at.isoformat() if started_at else None,
+                    "stopped_at": stopped_at.isoformat(),
+                    "message_count": message_count,
+                },
             )
 
         conversation_task = None
@@ -238,7 +246,7 @@ async def stop_conversation():
             topic_snapshot,
             participants_snapshot,
             duration_seconds,
-            len(snapshot_state.get("messages", [])) if snapshot_state else 0,
+            message_count,
         )
 
         return {
