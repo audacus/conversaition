@@ -277,8 +277,8 @@ curl "http://localhost:8000/conversation/status"
 - **Updated `PROGRESS.md`** - Logged backend fix and pending validation steps
 
 ## 📁 File Changes This Session (2025-09-29 Persona Reinforcement)
-- **Updated `backend/participants.py`** - Hardened persona prompts to prevent self-identity drift and encourage contrarian engagement
-- **Updated `backend/participants.py`** - Added env overrides (`ALICE_MODEL`, etc.) for rapid model tier experiments
+- **Updated `backend/participants.py`** - Personas now load from `participants_config.json` so additional participants can be added without code edits
+- **Added `backend/participants_config.json`** - Default pool (Alice/Bob/Charlie) with persona prompts and model settings
 - **Updated `backend/conversation_graph.py`** - Added Gemini candidate parsing + final fallback invoke when streaming payloads are empty
 - **New transcripts** (`data/transcripts/conversation-20250929T130150Z.json`, `...T130352Z.json`, `...T130516Z.json`, `...T130707Z.json`) - Post-fix samples showing improved Charlie output
 
@@ -364,4 +364,4 @@ curl "http://localhost:8000/conversation/status"
 - ✅ Production APIs with proper error handling
 - ✅ Visual status indicators and participant color coding
 - ✅ End-to-end tested and validated system
-- ⚙️ **Model Override Controls (2025-09-29 14:20 CEST):** Participant env overrides (`ALICE_MODEL`, etc.) unlock quick trials of `gpt-o4-mini`, `gemini-2.5-pro` without code edits
+- 📚 **Participant Config Externalised (2025-09-29 14:20 CEST):** Moved persona definitions to `backend/participants_config.json` for easy add/remove without env tweaks
