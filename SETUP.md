@@ -10,8 +10,7 @@
 # Backend
 cd backend
 python3.13 -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+.venv/bin/python -m pip install -r requirements.txt
 
 # Create backend/.env
 OPENAI_API_KEY=sk-...
@@ -44,7 +43,7 @@ curl http://localhost:8000/participants
 
 **Backend won't start**
 - Check .env file exists with valid API keys
-- Reinstall: `pip install -r requirements.txt`
+- Reinstall: `.venv/bin/python -m pip install -r requirements.txt`
 
 **Frontend won't start**
 - `rm -rf node_modules package-lock.json && npm install`

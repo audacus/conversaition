@@ -5,9 +5,9 @@
 **Backend:**
 ```bash
 cd backend
-.venv/bin/python main.py          # Run server (or: uvicorn backend.main:app --reload)
-python3 -m unittest backend.tests.test_conversation_graph  # Tests
-python3 -m py_compile *.py        # Syntax check
+.venv/bin/python main.py  # Run server (or: .venv/bin/uvicorn main:app --reload)
+.venv/bin/python -m unittest backend.tests.test_conversation_graph    # Tests
+.venv/bin/python -m py_compile *.py  # Syntax check
 ```
 
 **Frontend:**
