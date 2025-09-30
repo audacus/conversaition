@@ -238,6 +238,11 @@ async def stop_conversation():
 
         message_count = len(snapshot_state.get("messages", [])) if snapshot_state else 0
 
+        # Calculate duration before persisting
+        duration_seconds = None
+        if started_at:
+            duration_seconds = int((stopped_at - started_at).total_seconds())
+
         if snapshot_state:
             transcript_store.persist(
                 topic=topic_snapshot,
@@ -253,9 +258,6 @@ async def stop_conversation():
 
         conversation_task = None
         conversation_graph.clear_state()
-        duration_seconds = None
-        if started_at:
-            duration_seconds = int((stopped_at - started_at).total_seconds())
 
         logger.info(
             "Conversation stopped: topic=%s participants=%s duration=%ss messages=%s",
