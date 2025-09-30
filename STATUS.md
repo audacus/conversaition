@@ -13,16 +13,20 @@ Platform complete with participants management UI. Documentation restructure com
 - Full conversation controls (start/pause/resume/stop/inject)
 - Participants CRUD UI
 - Analytics dashboard with transcript viewer
-- E2E Playwright tests + GitHub Actions CI
+- E2E Playwright tests
 - Dark theme UI
 
 ## Recent
+
+**Streaming Fixes (2025-09-30):**
+- Fixed Bob/Charlie streaming: added streaming=True to all LangChain models
+- Detect Gemini thinking tokens via usage_metadata.output_token_details.reasoning
+- Increased token limits: Bob 1024, Charlie 2048 (account for prompt overhead)
 
 **UI & Infrastructure (2025-09-30):**
 - Implemented dark theme: gray-900 base, optimized contrast
 - Upgraded models: gpt-4o-mini, claude-sonnet-4-5-20250929, gemini-2.5-pro
 - Built analytics UI: transcript list + detail views with metadata
-- Added GitHub Actions workflow for Playwright CI
 
 **Documentation Restructure (2025-09-29):**
 - Created SETUP.md (compressed from GETTING_STARTED.md, 736→300 words)
@@ -67,17 +71,11 @@ None
 
 ## Recent Files Changed
 
-**Created:**
-- frontend/app/analytics/page.tsx (transcript list + summary stats)
-- frontend/app/analytics/[filename]/page.tsx (transcript detail viewer)
-- .github/workflows/playwright.yml (CI workflow)
-
 **Modified:**
-- frontend/app/globals.css (dark theme colors)
-- frontend/app/page.tsx (dark theme + analytics link)
-- frontend/app/participants/page.tsx (dark theme)
-- backend/participants_config.json (upgraded models)
-- STATUS.md (this session)
+- backend/participants.py (added streaming=True for all providers)
+- backend/participants_config.json (increased token limits for Bob/Charlie)
+- backend/conversation_graph.py (detect/filter Gemini thinking tokens)
+- STATUS.md (removed GitHub Actions, added streaming fixes)
 
 ## Known Issues
 
