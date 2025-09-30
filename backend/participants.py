@@ -81,6 +81,7 @@ def create_participant_llm(participant_id: str):
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
+            streaming=True,
             api_key=os.getenv("OPENAI_API_KEY"),
         )
     if provider == "anthropic":
@@ -88,6 +89,7 @@ def create_participant_llm(participant_id: str):
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
+            streaming=True,
             api_key=os.getenv("ANTHROPIC_API_KEY"),
         )
     if provider == "gemini":
@@ -95,6 +97,7 @@ def create_participant_llm(participant_id: str):
             model=model,
             temperature=temperature,
             max_output_tokens=max_tokens,
+            streaming=True,
             api_key=os.getenv("GOOGLE_API_KEY"),
         )
 
