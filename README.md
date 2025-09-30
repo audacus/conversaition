@@ -36,7 +36,7 @@ npm run dev  # http://localhost:3000
 
 Visit **http://localhost:3000** to start conversations!
 
-**First time setup?** See [GETTING_STARTED.md](GETTING_STARTED.md) for detailed instructions.
+**First time setup?** See [SETUP.md](SETUP.md) for detailed instructions.
 
 ## Current Implementation
 
@@ -58,11 +58,11 @@ Visit **http://localhost:3000** to start conversations!
 ## Documentation
 
 ### Getting Started
-- **[Getting Started](GETTING_STARTED.md)** - Installation, environment setup, first run
-- **[Development Guide](DEVELOPMENT.md)** - Commands, testing, workflow
+- **[Setup Guide](SETUP.md)** - Installation, environment setup, troubleshooting
+- **[Development Guide](DEV.md)** - Commands, testing, contributing
 
 ### Architecture & Design
-- **[Architecture Overview](ARCHITECTURE.md)** - System design, tech stack, data models
+- **[Architecture Overview](docs/ARCHITECTURE.md)** - System design, tech stack, roadmap
 - **[Architecture Decisions](docs/adr/README.md)** - ADR index and historical decisions
 - **[API Reference](docs/api/README.md)** - Complete API endpoint documentation
 
@@ -71,7 +71,7 @@ Visit **http://localhost:3000** to start conversations!
 - **[Implementation Plans](docs/plans/README.md)** - Feature plans and specifications
 
 ### Project Status
-- **[PROGRESS.md](PROGRESS.md)** - Current status, recent work, next actions
+- **[STATUS.md](STATUS.md)** - Current status, recent work, next actions
 
 ## Vision & Roadmap
 
@@ -88,7 +88,7 @@ Visit **http://localhost:3000** to start conversations!
 - **Branching Conversations** - Explore parallel topic threads
 - **Analytics Dashboard** - Participation metrics and conversation insights
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed roadmap and technical plans.
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed roadmap and technical plans.
 
 ## Project Structure
 

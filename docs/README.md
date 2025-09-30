@@ -4,22 +4,21 @@ Welcome to the Conversaition documentation! This hub provides access to all proj
 
 ## Quick Navigation
 
-### 📚 Getting Started
-- **[Installation & Setup](../GETTING_STARTED.md)** - First-time setup, prerequisites, API keys
-- **[Running the Application](../DEVELOPMENT.md)** - Development commands and workflow
+### Getting Started
+- **[Setup Guide](../SETUP.md)** - Installation, prerequisites, API keys, troubleshooting
+- **[Development Guide](../DEV.md)** - Commands, testing, contributing
 - **[Main README](../README.md)** - Project overview and quick start
 
-### 🏗️ Architecture & Design
-- **[Architecture Overview](../ARCHITECTURE.md)** - System design, components, tech stack
-- **[Architecture Decision Records (ADRs)](adr/README.md)** - Historical design decisions
+### Architecture & Design
+- **[Architecture Overview](ARCHITECTURE.md)** - System design, components, tech stack, roadmap
+- **[Architecture Decision Records](adr/README.md)** - Historical design decisions
 - **[API Reference](api/README.md)** - Complete API endpoint documentation
 
-### 📋 Planning & Implementation
+### Planning & Status
 - **[Implementation Plans](plans/README.md)** - Feature specifications and plans
-- **[Development Progress](../PROGRESS.md)** - Current status and recent work
+- **[Current Status](../STATUS.md)** - Current work, recent changes, next actions
 
-### 🔧 Project Guidance
-- **[Project Structure](../AGENTS.md)** - Codebase organization and conventions
+### Project Guidance
 - **[AI Agent Instructions](../CLAUDE.md)** - Development workflow and standards
 
 ## Documentation Structure
@@ -55,9 +54,9 @@ docs/
 - **Infrastructure**: SSE streaming, transcript persistence
 
 ### Development Resources
-- [Testing Guide](../DEVELOPMENT.md#testing) - Unit tests, E2E tests with Playwright
+- [Testing Guide](../DEV.md#testing) - Unit tests, E2E tests with Playwright
 - [API Endpoints](api/README.md) - Full REST API documentation
-- [Progress Tracking](../PROGRESS.md) - Current status and next actions
+- [Status Tracking](../STATUS.md) - Current status and next actions
 
 ## Contributing
 
@@ -65,6 +64,6 @@ For development workflow, git standards, and session protocols, see [CLAUDE.md](
 
 ## Need Help?
 
-- Check [GETTING_STARTED.md](../GETTING_STARTED.md) for setup issues
-- Review [PROGRESS.md](../PROGRESS.md) for known issues
+- Check [SETUP.md](../SETUP.md) for setup issues
+- Review [STATUS.md](../STATUS.md) for known issues
 - See [Architecture Decision Records](adr/README.md) for design rationale

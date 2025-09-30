@@ -1,110 +1,127 @@
-# Conversaition AI Agent Instructions
+# Claude Instructions
 
 ## Project Context
-You're working on **Conversaition** - a multi-AI conversation platform with human oversight. The MVP is complete and performance-optimized. Current status: enterprise-ready platform with 3 AI participants (Alice, Bob, Charlie) using latest AI models.
 
-**For project structure and static information, see AGENTS.md**
+**Conversaition** - Multi-AI conversation platform with human oversight. Enterprise-ready MVP with 3 AI participants (Alice/OpenAI, Bob/Anthropic, Charlie/Gemini).
 
-## Critical Git Standards
-**NEVER mention Claude Code, "Generated with", or any AI attribution in commit messages.**
+**Tech:** FastAPI + LangGraph + Next.js + TypeScript + AI SDK
 
-Required format:
-- Short, imperative messages (128 chars max)
-- Examples: "Add participants config", "Fix SSE streaming", "Update conversation graph"
-- Focus on what the commit does, not what was done
+## Critical Rules
 
-## Documentation Requirements
+**Git commits:**
+- NEVER mention Claude Code, AI tools, or "Generated with"
+- Short imperative messages (128 chars max): "Add feature", "Fix bug"
+- Focus on what commit does, not what was done
 
-### PROGRESS.md Updates (Critical)
-**Always update PROGRESS.md** for every significant task:
-- Update "Current Status" section at top
-- Log "Recently Completed" with timestamps
-- Document "File Changes This Session"
-- Add "Recent Decisions & Ideas" for architectural choices
-- Update "Next Steps" for future work
+**Documentation updates:**
+- Always update STATUS.md for significant tasks
+- Use terse, human-readable format: bullets over prose
+- Link, don't duplicate (single source of truth)
+- No emoji except critical status (✅❌⚠️)
+- STATUS.md: 5 bullets max per section
 
-### Architecture Decision Records
-Create ADR files in `docs/adr/` for major technical decisions. See `docs/adr/README.md` for current ADRs and template format.
+**File operations:**
+- ALWAYS prefer editing existing files over creating new ones
+- Read files before editing
+- Follow existing patterns
+- Check package.json/requirements.txt before assuming libs available
 
-### Implementation Plans
-Document new features in `docs/plans/` before implementation. See `docs/plans/README.md` for active plans and template format.
+## Session Workflow
 
-## Code Quality Standards
+**Start:**
+1. Read STATUS.md first
+2. Validate environment if needed
+3. Update STATUS.md with session start
 
-### File Editing Strategy
-- **ALWAYS prefer editing existing files** over creating new ones
-- Read files before editing to understand current structure
-- Follow existing code patterns and conventions
-- Check package.json/requirements.txt before assuming libraries are available
+**During:**
+- Update STATUS.md frequently
+- Document blockers as they arise
+- Note architectural decisions
 
-### Testing and Validation
-- Test incrementally after each component implementation
-- Run lint/typecheck commands when available
-- Validate changes work before marking tasks complete
-
-## Session Workflow Protocol
-**Every session must follow this pattern:**
-
-### Session Start:
-1. **Read PROGRESS.md first** - understand current state
-2. **Validate environment setup** (backend/frontend running if needed)
-3. **Review recent decisions** and implementation approach
-4. **Update PROGRESS.md** with session start status
-5. **Pick up from documented next steps**
-
-### During Work:
-- **Update PROGRESS.md frequently** - after completing tasks
-- **Document blockers/issues** as they arise
-- **Note architectural decisions** and rationale
-
-### Session End:
-1. **Update PROGRESS.md** with current status
-2. **Document any blockers** clearly
-3. **List next 3 concrete actions** for continuation
-4. **Note environment setup needs**
-5. **Add file changes section** to PROGRESS.md
-6. **Create git commits** - separate commits by concern (accessibility, tests, docs, etc.)
-   - Use short, imperative messages (follow Git Standards above)
-   - Stay in project folder - no `cd ..`
+**End:**
+1. Update STATUS.md with current state
+2. Document blockers clearly
+3. List 3 concrete next actions
+4. Add file changes section
+5. Create git commits (separate by concern)
+   - Stay in project folder
    - One logical change per commit
 
 ## Task Management
-Use TodoWrite tool proactively for:
+
+Use TodoWrite for:
 - Complex multi-step tasks (3+ steps)
-- Planning implementation approaches
-- Tracking progress during development
-- Breaking down large tasks into smaller steps
+- Planning implementations
+- Tracking progress
+- Breaking down large tasks
 
-Mark todos complete immediately after finishing tasks.
+Mark complete immediately after finishing.
 
-## Communication Standards
-- Keep responses concise (fewer than 4 lines unless detail requested)
-- Answer directly without unnecessary preamble
-- Focus on the specific task at hand
-- Use TodoWrite to demonstrate progress tracking
+## Communication
+
+- Concise responses (<4 lines unless detail requested)
+- Answer directly without preamble
+- Focus on specific task
+- Use TodoWrite to show progress
 
 ## Documentation Structure
 
-### Root Documentation
-- **README.md** - Project overview, quick start, features (133 lines)
-- **GETTING_STARTED.md** - Installation, environment setup, troubleshooting
-- **DEVELOPMENT.md** - Development commands, testing, workflow
-- **ARCHITECTURE.md** - System design, components, tech stack, roadmap
-- **PROGRESS.md** - Current status, recent work, next actions, session notes
-- **AGENTS.md** - Project structure and conventions (static reference)
-- **CLAUDE.md** - This file - AI agent instructions
+**Root (for humans & AI):**
+- README.md - Overview, features, quick start
+- SETUP.md - Installation, troubleshooting
+- DEV.md - Commands, testing, contributing
+- STATUS.md - Current status, recent work, next actions
+- CLAUDE.md - This file
 
-### docs/ Directory
-- **docs/README.md** - Documentation hub and navigation
-- **docs/adr/README.md** - Architecture Decision Records index
-- **docs/api/README.md** - Complete API endpoint documentation
-- **docs/plans/README.md** - Implementation plans and feature specs
-- **docs/archive/** - Historical documents and archived plans
+**docs/ (reference):**
+- docs/ARCHITECTURE.md - System design, tech stack
+- docs/README.md - Doc hub
+- docs/api/README.md - API endpoints
+- docs/adr/README.md - Architecture decisions
+- docs/plans/README.md - Implementation plans
 
-### Quick Reference
-- Setup issues → GETTING_STARTED.md
-- Running commands → DEVELOPMENT.md
-- System design → ARCHITECTURE.md
-- Current work → PROGRESS.md
+## Quick Reference
+
+- Setup issues → SETUP.md
+- Commands → DEV.md
+- Current work → STATUS.md
 - API details → docs/api/README.md
 - Design decisions → docs/adr/README.md
+- System design → docs/ARCHITECTURE.md
+
+## Project Structure
+
+```
+backend/
+├── main.py                   # FastAPI + endpoints
+├── conversation_graph.py     # LangGraph orchestration
+├── participants.py           # CRUD + validation
+├── adapter.py               # SSE streaming
+├── storage.py               # Transcript persistence
+└── participants_config.json # AI configs
+
+frontend/app/
+├── page.tsx                 # Main UI
+├── participants/            # Management UI
+├── hooks/                   # React hooks (useSSEStream, useAISDKAdapter)
+└── tests/                   # Playwright E2E
+```
+
+## AI Models
+
+- Alice (OpenAI): gpt-4.1-mini - analytical
+- Bob (Anthropic): claude-sonnet-4-20250514 - creative
+- Charlie (Google): gemini-2.5-flash - contrarian
+
+## Key Standards
+
+**Python:** PEP 8, type hints, async/await, docstrings
+**TypeScript:** Strict mode, hooks only, functional components
+
+**Testing:**
+- Test incrementally after each component
+- Run lint/typecheck when available
+- Validate changes before marking complete
+
+**Terseness principle:**
+Write docs like human notes: terse bullets, short statements, no unnecessary prose. AI reads/writes fast; humans don't. Save tokens, increase clarity.
