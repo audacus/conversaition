@@ -18,6 +18,12 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Recent
 
+**Streaming Analysis (2025-09-30):**
+- Added comprehensive metadata logging for all providers
+- Analyzed streaming patterns: Alice (~40-80 chunks), Bob (~9 chunks, efficient)
+- ❌ Discovered Gemini streaming broken: only 1 empty chunk despite streaming=True
+- Removed GitHub Actions CI workflow (not in use)
+
 **Streaming Fixes (2025-09-30):**
 - Fixed Bob/Charlie streaming: added streaming=True to all LangChain models
 - Detect Gemini thinking tokens via usage_metadata.output_token_details.reasoning
@@ -61,9 +67,11 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Next
 
-1. Enhance analytics: Charts, filters, search
-2. Export transcripts: JSON/Markdown download
-3. Theme toggle: Allow user preference switching
+1. ❌ Fix Gemini streaming (CRITICAL: currently not streaming at all)
+2. Fix stop endpoint duration_seconds bug
+3. Expose usage_metadata to frontend (tokens, cache stats)
+4. Enhance analytics: Charts, filters, search
+5. Export transcripts: JSON/Markdown download
 
 ## Blockers
 
@@ -72,13 +80,16 @@ None
 ## Recent Files Changed
 
 **Modified:**
-- backend/participants.py (added streaming=True for all providers)
-- backend/participants_config.json (increased token limits for Bob/Charlie)
-- backend/conversation_graph.py (detect/filter Gemini thinking tokens)
-- STATUS.md (removed GitHub Actions, added streaming fixes)
+- backend/conversation_graph.py (added comprehensive streaming metadata logging)
+- STATUS.md (documented streaming analysis findings, added critical Gemini bug)
+
+**Deleted:**
+- .github/workflows/playwright.yml (CI not in use)
 
 ## Known Issues
 
+- ❌ CRITICAL: Gemini streaming broken - returns 1 empty chunk, content appears via fallback path
+- Stop endpoint crashes: "cannot access local variable 'duration_seconds'" error
 - Stop button closes SSE but backend continues until natural end
 - Long conversations (50+ turns) may need pagination
 - Python 3.13 escape sequence warnings (cosmetic)
