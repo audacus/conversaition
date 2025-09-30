@@ -98,6 +98,8 @@ def create_participant_llm(participant_id: str):
             temperature=temperature,
             max_output_tokens=max_tokens,
             streaming=True,
+            # Note: Gemini models may include reasoning/thinking in responses
+            # The conversation_graph filters out meta-instructions that start with *
             api_key=os.getenv("GOOGLE_API_KEY"),
         )
 

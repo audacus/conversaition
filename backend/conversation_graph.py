@@ -339,11 +339,34 @@ class ConversationGraph:
             })
 
             response_content = ""
+            thinking_content = ""
             async for chunk in llm.astream(conversation_messages):
+                # Check if this is a thinking/reasoning chunk (Gemini models)
+                is_thinking = False
+                if hasattr(chunk, 'response_metadata'):
+                    metadata = chunk.response_metadata
+                    # Gemini uses 'is_blocked' or other flags, but thinking content
+                    # typically appears in additional_kwargs or specific fields
+                    if hasattr(chunk, 'additional_kwargs'):
+                        # Check for thinking-specific markers
+                        pass
+
                 chunk_text = self._extract_chunk_text(chunk)
                 if not chunk_text:
                     if current_speaker == "Charlie":
                         logger.warning(f"Charlie produced empty chunk: {chunk!r}")
+                    continue
+
+                # Filter out meta-instruction patterns that leak from system prompts
+                # These are typical of models exposing their internal reasoning
+                if chunk_text.strip().startswith('*') and any(marker in chunk_text.lower() for marker in
+                    ['you are now', 'your response must', 'you must', '*you', 'in character as']):
+                    # This looks like thinking/meta-instructions, treat as thinking
+                    thinking_content += chunk_text
+                    await self._emit_event("ai_thinking", {
+                        "participant": current_speaker,
+                        "content": chunk_text
+                    })
                     continue
 
                 response_content += chunk_text
