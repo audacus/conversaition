@@ -18,11 +18,11 @@ const avatarMap: Record<string, string> = {
 };
 
 const participantBadgeClassMap: Record<string, string> = {
-  Alice: 'bg-blue-50 border-blue-300 text-blue-900',
-  Bob: 'bg-green-50 border-green-300 text-green-900',
-  Charlie: 'bg-purple-50 border-purple-300 text-purple-900',
-  Human: 'bg-orange-50 border-orange-300 text-orange-900',
-  System: 'bg-gray-100 border-gray-300 text-gray-800',
+  Alice: 'bg-blue-950 border-blue-700 text-blue-200',
+  Bob: 'bg-green-950 border-green-700 text-green-200',
+  Charlie: 'bg-purple-950 border-purple-700 text-purple-200',
+  Human: 'bg-orange-950 border-orange-700 text-orange-200',
+  System: 'bg-gray-800 border-gray-600 text-gray-200',
 };
 
 const formatDuration = (seconds: number) => {
@@ -289,34 +289,42 @@ export default function Home() {
   const renderStatusChip = (label: string, tone: 'success' | 'warning' | 'danger' | 'idle') => {
     const base = 'px-3 py-1 rounded-full text-sm font-medium';
     const palette = {
-      success: 'bg-green-100 text-green-800',
-      warning: 'bg-yellow-100 text-yellow-800',
-      danger: 'bg-red-100 text-red-800',
-      idle: 'bg-gray-100 text-gray-700',
+      success: 'bg-green-900 text-green-200',
+      warning: 'bg-yellow-900 text-yellow-200',
+      danger: 'bg-red-900 text-red-200',
+      idle: 'bg-gray-700 text-gray-300',
     } as const;
 
     return <span className={`${base} ${palette[tone]}`}>{label}</span>;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-900 py-8">
       <div className="max-w-5xl mx-auto px-4 space-y-6">
         <header className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="text-center flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">Conversaition</h1>
-              <p className="text-gray-600">Multi-AI conversation platform with human-in-the-loop guidance</p>
+              <h1 className="text-3xl font-bold text-gray-100">Conversaition</h1>
+              <p className="text-gray-400">Multi-AI conversation platform with human-in-the-loop guidance</p>
             </div>
-            <Link
-              href="/participants"
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm font-medium"
-            >
-              Manage Participants
-            </Link>
+            <div className="flex gap-2">
+              <Link
+                href="/analytics"
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-100 rounded-lg transition-colors text-sm font-medium"
+              >
+                Analytics
+              </Link>
+              <Link
+                href="/participants"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                Manage Participants
+              </Link>
+            </div>
           </div>
         </header>
 
-      <section className="bg-white rounded-lg shadow p-5 space-y-4">
+      <section className="bg-gray-800 rounded-lg shadow p-5 space-y-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             {renderStatusChip(
@@ -338,9 +346,9 @@ export default function Home() {
               {isStreaming && renderStatusChip('Streaming...', 'success')}
             </div>
 
-            <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+            <div className="flex flex-wrap gap-2 text-sm text-gray-300">
               {activeInfo.map(info => (
-                <span key={info} className="px-2 py-1 bg-gray-100 rounded-md">
+                <span key={info} className="px-2 py-1 bg-gray-700 rounded-md">
                   {info}
                 </span>
               ))}
@@ -350,12 +358,12 @@ export default function Home() {
           {(apiError || streamError) && (
             <div className="grid gap-2 text-sm">
               {apiError && (
-                <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                <div className="rounded border border-red-800 bg-red-950 px-3 py-2 text-red-300">
                   API Error: {apiError}
                 </div>
               )}
               {streamError && (
-                <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+                <div className="rounded border border-amber-800 bg-amber-950 px-3 py-2 text-amber-300">
                   {streamError}
                 </div>
               )}
@@ -365,7 +373,7 @@ export default function Home() {
           <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Conversation Topic
                 </label>
                 <input
@@ -373,26 +381,26 @@ export default function Home() {
                   value={topic}
                   onChange={(event) => setTopic(event.target.value)}
                   disabled={isConversationActive}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 text-gray-900 disabled:text-gray-600"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-700 bg-gray-700 text-gray-100 disabled:text-gray-500"
                   placeholder="Enter a topic for discussion..."
                 />
               </div>
 
               <div>
-                <span className="block text-sm font-medium text-gray-700 mb-1">
+                <span className="block text-sm font-medium text-gray-300 mb-1">
                   Participants
                 </span>
                 {participantsLoading && (
-                  <div className="text-sm text-gray-500">Loading participants…</div>
+                  <div className="text-sm text-gray-400">Loading participants…</div>
                 )}
                 {participantsError && (
-                  <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  <div className="rounded border border-red-800 bg-red-950 px-3 py-2 text-sm text-red-300">
                     {participantsError}
                   </div>
                 )}
                 <div className="flex flex-wrap gap-3">
                   {availableParticipants.map((participant) => {
-                    const badgeClass = participantBadgeClassMap[participant.id] ?? 'bg-gray-100 border-gray-300 text-gray-800';
+                    const badgeClass = participantBadgeClassMap[participant.id] ?? 'bg-gray-700 border-gray-600 text-gray-200';
                     return (
                       <label key={participant.id} className="flex items-center space-x-2 text-sm">
                         <input
@@ -400,7 +408,7 @@ export default function Home() {
                           checked={selectedParticipants.includes(participant.id)}
                           disabled={isConversationActive || participantsLoading}
                           onChange={(event) => handleParticipantToggle(participant.id, event.target.checked)}
-                          className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+                          className="rounded border-gray-600 text-blue-500 focus:ring-blue-500"
                         />
                         <span className={`px-2 py-1 border rounded ${badgeClass}`}>
                           {participant.name}
@@ -409,7 +417,7 @@ export default function Home() {
                     );
                   })}
                   {!participantsLoading && !participantsError && availableParticipants.length === 0 && (
-                    <span className="text-sm text-gray-500">No participants configured.</span>
+                    <span className="text-sm text-gray-400">No participants configured.</span>
                   )}
                 </div>
               </div>
@@ -418,33 +426,33 @@ export default function Home() {
             <button
               onClick={handleStartConversation}
               disabled={!canStartConversation}
-              className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-500 disabled:bg-gray-700 disabled:cursor-not-allowed"
             >
               {apiLoading ? 'Starting…' : 'Start Conversation'}
             </button>
           </div>
 
           {isConversationActive && (
-            <div className="border-t pt-4 mt-4 grid gap-4 md:grid-cols-[auto_auto] md:justify-between md:items-center">
+            <div className="border-t border-gray-700 pt-4 mt-4 grid gap-4 md:grid-cols-[auto_auto] md:justify-between md:items-center">
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={handlePauseConversation}
                   disabled={isConversationPaused || apiLoading}
-                  className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-500 disabled:bg-gray-700 disabled:cursor-not-allowed"
                 >
                   ⏸️ Pause
                 </button>
                 <button
                   onClick={handleResumeConversation}
                   disabled={!isConversationPaused || apiLoading}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 disabled:bg-gray-700 disabled:cursor-not-allowed"
                 >
                   ▶️ Resume
                 </button>
                 <button
                   onClick={handleStopConversation}
                   disabled={apiLoading}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 disabled:bg-gray-700 disabled:cursor-not-allowed"
                 >
                   ⏹️ Stop
                 </button>
@@ -467,12 +475,12 @@ export default function Home() {
                       : 'Pause the conversation to inject a human message…'
                   }
                   disabled={!isConversationPaused}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-600"
+                  className="flex-1 px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-700 bg-gray-700 text-gray-100 disabled:text-gray-500"
                 />
                 <button
                   onClick={handleSendHumanMessage}
                   disabled={!canSendHumanMessage || apiLoading}
-                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-500 disabled:bg-gray-700 disabled:cursor-not-allowed"
                 >
                   Send
                 </button>
@@ -481,11 +489,11 @@ export default function Home() {
           )}
         </section>
 
-        <section className="bg-white rounded-lg shadow p-6 space-y-4">
+        <section className="bg-gray-800 rounded-lg shadow p-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-xl font-semibold text-gray-900">Conversation</h2>
-            <div className="text-sm text-gray-500">
-              Topic: <span className="font-medium text-gray-700">{conversationStatus.topic ?? topic}</span>
+            <h2 className="text-xl font-semibold text-gray-100">Conversation</h2>
+            <div className="text-sm text-gray-400">
+              Topic: <span className="font-medium text-gray-200">{conversationStatus.topic ?? topic}</span>
               <span className="mx-2">•</span>
               Participants: {currentParticipants.join(', ')}
               <span className="mx-2">•</span>
@@ -493,11 +501,11 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="border rounded-lg p-4 min-h-[380px] max-h-[580px] overflow-y-auto bg-gray-50">
+          <div className="border border-gray-700 rounded-lg p-4 min-h-[380px] max-h-[580px] overflow-y-auto bg-gray-900">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-2">
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-2">
                 <p className="italic">Start a conversation to see the multi-agent discussion unfold.</p>
-                <div className="text-xs text-gray-400">
+                <div className="text-xs text-gray-500">
                   Alice • Analytical · Bob • Creative · Charlie • Contrarian
                 </div>
               </div>
@@ -505,7 +513,7 @@ export default function Home() {
               <ul className="space-y-3">
                 {messages.map(message => {
                   const palette =
-                    participantBadgeClassMap[message.participant] ?? 'bg-white border-gray-200 text-gray-800';
+                    participantBadgeClassMap[message.participant] ?? 'bg-gray-800 border-gray-700 text-gray-200';
                   const avatar = avatarMap[message.participant] ?? avatarMap.System;
                   const timestamp = formatTimestamp(message.timestamp);
 
@@ -513,10 +521,10 @@ export default function Home() {
                     <li
                       key={message.id}
                       className={`flex gap-3 rounded-lg border p-3 ${palette} ${
-                        message.isStreaming ? 'ring-1 ring-inset ring-blue-300 animate-pulse' : ''
+                        message.isStreaming ? 'ring-1 ring-inset ring-blue-500 animate-pulse' : ''
                       }`}
                     >
-                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-gray-200 bg-white">
+                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-gray-600 bg-gray-800">
                         <Image
                           src={avatar}
                           alt={`${message.participant} avatar`}
@@ -525,16 +533,16 @@ export default function Home() {
                         />
                       </div>
                       <div className="flex-1 space-y-1">
-                        <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-800">
+                        <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-200">
                           <span>{message.participant}</span>
                           {message.isStreaming && (
-                            <span className="text-xs font-medium text-blue-600">streaming…</span>
+                            <span className="text-xs font-medium text-blue-400">streaming…</span>
                           )}
                           {timestamp && (
-                            <span className="text-xs font-normal text-gray-600">{timestamp}</span>
+                            <span className="text-xs font-normal text-gray-400">{timestamp}</span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-sm text-gray-100 whitespace-pre-wrap leading-relaxed">
                           {message.content || '…'}
                         </p>
                       </div>
@@ -545,7 +553,7 @@ export default function Home() {
             )}
           </div>
 
-          <div className="text-xs text-gray-500 flex justify-between">
+          <div className="text-xs text-gray-400 flex justify-between">
             <span>Backend: {apiBaseUrl}</span>
             <span>Frontend: http://localhost:3000</span>
           </div>
