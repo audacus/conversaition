@@ -109,9 +109,9 @@ frontend/app/
 
 ## AI Models
 
-- Alice (OpenAI): gpt-4.1-mini - analytical
-- Bob (Anthropic): claude-sonnet-4-20250514 - creative
-- Charlie (Google): gemini-2.5-flash - contrarian
+- Alice (OpenAI): gpt-4o-mini - analytical
+- Bob (Anthropic): claude-sonnet-4-5-20250929 - creative
+- Charlie (Google): gemini-2.5-pro - contrarian
 
 ## Key Standards
 
