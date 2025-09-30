@@ -341,40 +341,35 @@ class ConversationGraph:
             response_content = ""
             thinking_content = ""
             async for chunk in llm.astream(conversation_messages):
-                # Check if this is a thinking/reasoning chunk (Gemini models)
+                # Detect thinking/reasoning tokens (Gemini 2.0+)
                 is_thinking = False
-                if hasattr(chunk, 'response_metadata'):
-                    metadata = chunk.response_metadata
-                    # Gemini uses 'is_blocked' or other flags, but thinking content
-                    # typically appears in additional_kwargs or specific fields
-                    if hasattr(chunk, 'additional_kwargs'):
-                        # Check for thinking-specific markers
-                        pass
+                if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
+                    output_details = chunk.usage_metadata.get('output_token_details', {})
+                    reasoning_tokens = output_details.get('reasoning', 0)
+                    if reasoning_tokens > 0:
+                        is_thinking = True
+                        logger.info(f"{current_speaker} thinking: {reasoning_tokens} reasoning tokens")
 
                 chunk_text = self._extract_chunk_text(chunk)
                 if not chunk_text:
-                    if current_speaker == "Charlie":
-                        logger.warning(f"Charlie produced empty chunk: {chunk!r}")
+                    # Empty chunks are normal at end of stream
                     continue
 
-                # Filter out meta-instruction patterns that leak from system prompts
-                # These are typical of models exposing their internal reasoning
-                if chunk_text.strip().startswith('*') and any(marker in chunk_text.lower() for marker in
-                    ['you are now', 'your response must', 'you must', '*you', 'in character as']):
-                    # This looks like thinking/meta-instructions, treat as thinking
+                if is_thinking:
+                    # This chunk contains thinking/reasoning content
                     thinking_content += chunk_text
                     await self._emit_event("ai_thinking", {
                         "participant": current_speaker,
                         "content": chunk_text
                     })
-                    continue
-
-                response_content += chunk_text
-                await self._emit_event("ai_response_stream", {
-                    "participant": current_speaker,
-                    "content": chunk_text,
-                    "full_content": response_content
-                })
+                else:
+                    # Normal output content
+                    response_content += chunk_text
+                    await self._emit_event("ai_response_stream", {
+                        "participant": current_speaker,
+                        "content": chunk_text,
+                        "full_content": response_content
+                    })
 
             if not response_content:
                 fallback_message = await llm.ainvoke(conversation_messages)
