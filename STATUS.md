@@ -1,29 +1,36 @@
 # Status
 
-**Date:** 2025-09-29
-**State:** Enterprise-ready MVP, documentation optimization in progress
+**Date:** 2025-09-30
+**State:** Enterprise-ready MVP, documentation optimization complete
 
 ## Current
 
-Platform complete with participants management UI. Documentation restructure underway: consolidating 7 root docs → 5, removing redundancy, cutting ~50% tokens.
+Platform complete with participants management UI. Documentation restructure complete: consolidated 7 root docs → 5, removed redundancy, cut ~54% tokens (5,200→2,400 words).
 
 **Features complete:**
 - Multi-AI orchestration (Alice/OpenAI, Bob/Anthropic, Charlie/Gemini)
 - Real-time SSE streaming
 - Full conversation controls (start/pause/resume/stop/inject)
 - Participants CRUD UI
-- Transcript persistence + analytics endpoints
-- E2E Playwright tests
+- Analytics dashboard with transcript viewer
+- E2E Playwright tests + GitHub Actions CI
+- Dark theme UI
 
 ## Recent
+
+**UI & Infrastructure (2025-09-30):**
+- Implemented dark theme: gray-900 base, optimized contrast
+- Upgraded models: gpt-4o-mini, claude-sonnet-4-5-20250929, gemini-2.5-pro
+- Built analytics UI: transcript list + detail views with metadata
+- Added GitHub Actions workflow for Playwright CI
 
 **Documentation Restructure (2025-09-29):**
 - Created SETUP.md (compressed from GETTING_STARTED.md, 736→300 words)
 - Created DEV.md (compressed from DEVELOPMENT.md, 599→250 words)
-- Creating STATUS.md (from PROGRESS.md, 1299→300 words target)
-- Moving ARCHITECTURE.md → docs/ (reference material)
-- Updating CLAUDE.md with terseness rules + AGENTS.md content
-- Deleting redundant files: AGENTS.md, GETTING_STARTED.md, DEVELOPMENT.md, PROGRESS.md
+- Created STATUS.md (from PROGRESS.md, 1299→300 words)
+- Moved ARCHITECTURE.md → docs/ (reference material)
+- Updated CLAUDE.md with terseness rules + AGENTS.md content
+- Deleted redundant files: AGENTS.md, GETTING_STARTED.md, DEVELOPMENT.md, PROGRESS.md
 
 **Documentation Reorganization (2025-09-29):**
 - Streamlined README (841→133 lines)
@@ -50,9 +57,9 @@ Platform complete with participants management UI. Documentation restructure und
 
 ## Next
 
-1. CI/CD: Add Playwright to GitHub Actions
-2. Analytics UI: Surface transcripts in dashboard
-3. Model upgrades: Consider gemini-2.5-pro, gpt-o4-mini
+1. Enhance analytics: Charts, filters, search
+2. Export transcripts: JSON/Markdown download
+3. Theme toggle: Allow user preference switching
 
 ## Blockers
 
@@ -61,28 +68,23 @@ None
 ## Recent Files Changed
 
 **Created:**
-- SETUP.md (compressed setup guide)
-- DEV.md (compressed dev guide)
-- STATUS.md (this file, replaces PROGRESS.md)
+- frontend/app/analytics/page.tsx (transcript list + summary stats)
+- frontend/app/analytics/[filename]/page.tsx (transcript detail viewer)
+- .github/workflows/playwright.yml (CI workflow)
 
-**Modified (pending):**
-- CLAUDE.md (terseness rules + project context)
-- README.md (updated doc links)
-
-**Moved (pending):**
-- ARCHITECTURE.md → docs/ARCHITECTURE.md
-
-**Deleted (pending):**
-- AGENTS.md (absorbed by CLAUDE.md)
-- GETTING_STARTED.md (replaced by SETUP.md)
-- DEVELOPMENT.md (replaced by DEV.md)
-- PROGRESS.md (replaced by STATUS.md)
+**Modified:**
+- frontend/app/globals.css (dark theme colors)
+- frontend/app/page.tsx (dark theme + analytics link)
+- frontend/app/participants/page.tsx (dark theme)
+- backend/participants_config.json (upgraded models)
+- STATUS.md (this session)
 
 ## Known Issues
 
 - Stop button closes SSE but backend continues until natural end
 - Long conversations (50+ turns) may need pagination
 - Python 3.13 escape sequence warnings (cosmetic)
+- Analytics: Some transcript metadata incomplete (duration/timestamps show NaN/Invalid Date)
 
 ## Key Decisions
 
@@ -103,9 +105,13 @@ None
 - StrictMode safe: single global callback
 - Centralized status propagation
 
+**UI/UX (2025-09-30):**
+- Dark-first design: gray-900 background, optimized text contrast
+- Analytics routing: /analytics for list, /analytics/[filename] for detail
+
 **Platform Core:**
 - LangGraph orchestration
 - External config (participants_config.json)
 - Event broadcasting via SSE
 - Thread-safe pause/resume
-- Models: gpt-4.1-mini, claude-sonnet-4-20250514, gemini-2.5-flash
+- Models: gpt-4o-mini, claude-sonnet-4-5-20250929, gemini-2.5-pro
