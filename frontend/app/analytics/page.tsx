@@ -13,6 +13,17 @@ interface TranscriptMetadata {
   duration_seconds: number;
 }
 
+interface OngoingConversation {
+  conversation_id: string;
+  topic: string;
+  participants: string[];
+  active: boolean;
+  paused: boolean;
+  turn_count: number;
+  message_count: number;
+  started_at: string;
+}
+
 interface AnalyticsSummary {
   total_conversations: number;
   total_messages: number;
@@ -24,6 +35,7 @@ interface AnalyticsSummary {
 export default function AnalyticsPage() {
   const [transcripts, setTranscripts] = useState<TranscriptMetadata[]>([]);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
+  const [ongoingConversation, setOngoingConversation] = useState<OngoingConversation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,9 +45,10 @@ export default function AnalyticsPage() {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const [transcriptsRes, summaryRes] = await Promise.all([
+        const [transcriptsRes, summaryRes, snapshotRes] = await Promise.all([
           fetch(`${apiBaseUrl}/transcripts?limit=50`),
           fetch(`${apiBaseUrl}/analytics/conversations/summary?limit=100`),
+          fetch(`${apiBaseUrl}/conversation/snapshot`).catch(() => null), // Don't fail if no active conversation
         ]);
 
         if (!transcriptsRes.ok || !summaryRes.ok) {
@@ -47,6 +60,19 @@ export default function AnalyticsPage() {
 
         setTranscripts(transcriptsData.transcripts || []);
         setSummary(summaryData);
+
+        // Check for ongoing conversation
+        if (snapshotRes && snapshotRes.ok) {
+          const snapshotData = await snapshotRes.json();
+          if (snapshotData.active) {
+            setOngoingConversation(snapshotData);
+          } else {
+            setOngoingConversation(null);
+          }
+        } else {
+          setOngoingConversation(null);
+        }
+
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -144,13 +170,45 @@ export default function AnalyticsPage() {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Messages</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Duration</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Started</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200">Status</th>
                       <th className="px-6 py-4 text-right text-sm font-semibold text-gray-200">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-700">
-                    {transcripts.length === 0 ? (
+                    {/* Ongoing Conversation Row */}
+                    {ongoingConversation && (
+                      <tr className="bg-green-950 hover:bg-green-900 transition-colors border-l-4 border-green-500">
+                        <td className="px-6 py-4 text-sm text-gray-100 font-medium">{ongoingConversation.topic}</td>
+                        <td className="px-6 py-4 text-sm text-gray-300">
+                          {ongoingConversation.participants.join(', ')}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-300">{ongoingConversation.message_count}</td>
+                        <td className="px-6 py-4 text-sm text-gray-300">
+                          <span className="text-green-400">In progress</span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-300">
+                          {formatDateTime(ongoingConversation.started_at)}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className="px-2 py-1 bg-green-900 text-green-200 rounded-full text-xs font-medium">
+                            {ongoingConversation.paused ? '⏸️ Paused' : '▶️ Active'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-right">
+                          <Link
+                            href={`/?conversation=${ongoingConversation.conversation_id}`}
+                            className="px-3 py-1 bg-green-700 hover:bg-green-600 text-green-100 rounded transition-colors font-medium"
+                          >
+                            Rejoin
+                          </Link>
+                        </td>
+                      </tr>
+                    )}
+
+                    {/* Completed Conversations */}
+                    {transcripts.length === 0 && !ongoingConversation ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
+                        <td colSpan={7} className="px-6 py-8 text-center text-gray-400">
                           No transcripts found
                         </td>
                       </tr>
@@ -167,6 +225,11 @@ export default function AnalyticsPage() {
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-300">
                             {formatDateTime(transcript.started_at)}
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <span className="px-2 py-1 bg-gray-700 text-gray-400 rounded-full text-xs">
+                              Completed
+                            </span>
                           </td>
                           <td className="px-6 py-4 text-sm text-right">
                             <Link

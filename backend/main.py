@@ -73,9 +73,15 @@ async def start_conversation(request: StartConversationRequest):
     try:
         logger.info(f"Starting conversation with topic: {request.topic}")
 
+        # Generate conversation ID
+        conversation_id = conversation_graph.current_conversation_id
+        if not conversation_id:
+            import uuid
+            conversation_id = str(uuid.uuid4())
+
         # Start conversation in background task
         conversation_task = asyncio.create_task(
-            conversation_graph.start_conversation(request.topic, request.participants)
+            conversation_graph.start_conversation(request.topic, request.participants, conversation_id)
         )
 
         # Broadcast conversation started status event
@@ -85,12 +91,14 @@ async def start_conversation(request: StartConversationRequest):
                 "active": True,
                 "paused": False,
                 "participants": request.participants,
-                "topic": request.topic
+                "topic": request.topic,
+                "conversation_id": conversation_id
             }
         })
 
         return {
             "status": "started",
+            "conversation_id": conversation_id,
             "topic": request.topic,
             "participants": request.participants
         }
@@ -285,10 +293,26 @@ async def get_conversation_status():
     try:
         return {
             "active": conversation_graph.is_active(),
-            "paused": conversation_graph.is_paused()
+            "paused": conversation_graph.is_paused(),
+            "conversation_id": conversation_graph.current_conversation_id
         }
     except Exception as e:
         logger.error(f"Error getting conversation status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/conversation/snapshot")
+async def get_conversation_snapshot():
+    """Get full snapshot of current conversation for reconnection"""
+    try:
+        snapshot = conversation_graph.get_conversation_snapshot()
+        if not snapshot:
+            raise HTTPException(status_code=404, detail="No active conversation")
+        return snapshot
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting conversation snapshot: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

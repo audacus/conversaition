@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ParticipantSummary, useConversationApi } from './hooks/useConversationApi';
 import { useSSEStream } from './hooks/useSSEStream';
 import { useAISDKAdapter } from './hooks/useAISDKAdapter';
@@ -52,6 +53,10 @@ const formatTimestamp = (timestamp?: string) => {
 };
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const conversationIdFromUrl = searchParams.get('conversation');
+
   const [topic, setTopic] = useState(DEFAULT_TOPIC);
   const [humanMessage, setHumanMessage] = useState('');
   const [availableParticipants, setAvailableParticipants] = useState<ParticipantSummary[]>([]);
@@ -59,6 +64,8 @@ export default function Home() {
   const [participantsError, setParticipantsError] = useState<string | null>(null);
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [streamError, setStreamError] = useState<string | null>(null);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(conversationIdFromUrl);
+  const reconnectionAttemptedRef = useRef<string | null>(null);
 
   const rawApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
   const apiBaseUrl = rawApiBaseUrl.endsWith('/')
@@ -74,6 +81,7 @@ export default function Home() {
     stopConversation,
     sendMessage,
     getParticipants,
+    getConversationSnapshot,
   } = useConversationApi(apiBaseUrl);
 
   const {
@@ -83,6 +91,7 @@ export default function Home() {
     handleStreamEvent: handleAdapterEvent,
     applyStatus,
     reset,
+    restoreMessages,
   } = useAISDKAdapter();
 
   // Load participants on mount and when page becomes visible (after editing participants)
@@ -150,6 +159,65 @@ export default function Home() {
     isStreaming,
   } = useSSEStream({ url: `${apiBaseUrl}/conversation/stream`, onError: handleSSEError });
 
+  // Reconnect to conversation from URL if present
+  useEffect(() => {
+    // Only attempt reconnection once per conversation ID
+    if (!conversationIdFromUrl || reconnectionAttemptedRef.current === conversationIdFromUrl) {
+      return;
+    }
+
+    reconnectionAttemptedRef.current = conversationIdFromUrl;
+    let cancelled = false;
+
+    const reconnect = async () => {
+      try {
+        setStreamError(null);
+
+        const snapshot = await getConversationSnapshot();
+
+        if (cancelled) {
+          return;
+        }
+
+        // Restore conversation state from snapshot
+        setTopic(snapshot.topic || DEFAULT_TOPIC);
+        setCurrentConversationId(snapshot.conversation_id);
+
+        applyStatus({
+          active: snapshot.active,
+          paused: snapshot.paused,
+          participants: snapshot.participants,
+          topic: snapshot.topic,
+        });
+
+        // Restore messages from snapshot
+        if (snapshot.messages && snapshot.messages.length > 0) {
+          restoreMessages(snapshot.messages);
+        }
+
+        // Reconnect to SSE stream if conversation is active
+        if (snapshot.active) {
+          connect(handleStreamEvent);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to reconnect to conversation:', error);
+          setStreamError('Failed to reconnect to conversation. It may have ended.');
+          // Clear invalid conversation ID from URL
+          router.push('/');
+          setCurrentConversationId(null);
+          reconnectionAttemptedRef.current = null;
+        }
+      }
+    };
+
+    reconnect();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationIdFromUrl, getConversationSnapshot, applyStatus, connect, handleStreamEvent, restoreMessages, router]);
+
   const isConversationActive = conversationStatus.active;
   const isConversationPaused = conversationStatus.paused;
   const hasSelectedParticipants = selectedParticipants.length > 0;
@@ -176,7 +244,14 @@ export default function Home() {
         topic,
       });
 
-      await startConversation(topic, selectedParticipants);
+      const result = await startConversation(topic, selectedParticipants);
+      const conversationId = result.conversation_id;
+
+      // Update URL with conversation ID
+      if (conversationId) {
+        setCurrentConversationId(conversationId);
+        router.push(`/?conversation=${conversationId}`);
+      }
 
       applyStatus({
         active: true,
@@ -190,7 +265,7 @@ export default function Home() {
       console.error('Failed to start conversation:', error);
       setStreamError('Failed to start conversation. Check backend availability.');
     }
-  }, [applyStatus, connect, disconnect, handleStreamEvent, reset, selectedParticipants, startConversation, topic]);
+  }, [applyStatus, connect, disconnect, handleStreamEvent, reset, router, selectedParticipants, startConversation, topic]);
 
   const handlePauseConversation = useCallback(async () => {
     try {
@@ -224,11 +299,15 @@ export default function Home() {
         topic: conversationStatus.topic ?? topic,
       });
       disconnect();
+
+      // Clear conversation ID from URL
+      setCurrentConversationId(null);
+      router.push('/');
     } catch (error) {
       console.error('Failed to stop conversation:', error);
       setStreamError('Unable to stop conversation.');
     }
-  }, [applyStatus, conversationStatus, disconnect, selectedParticipants, stopConversation, topic]);
+  }, [applyStatus, conversationStatus, disconnect, router, selectedParticipants, stopConversation, topic]);
 
   const handleSendHumanMessage = useCallback(async () => {
     if (!canSendHumanMessage) {

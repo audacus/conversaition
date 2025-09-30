@@ -106,6 +106,24 @@ export const useAISDKAdapter = () => {
     setStatus(prev => mergeStatus(prev, payload));
   }, []);
 
+  const restoreMessages = useCallback((restoredMessages: Array<{
+    participant: string;
+    content: string;
+    type: string;
+    timestamp?: string;
+  }>) => {
+    const messages: ConversationMessage[] = restoredMessages.map((msg, index) => ({
+      id: createMessageId(`${msg.participant}-${index}`),
+      participant: msg.participant,
+      content: msg.content,
+      role: msg.type === 'human' ? 'human' : 'ai',
+      isStreaming: false,
+      complete: true,
+      timestamp: msg.timestamp || new Date().toISOString(),
+    }));
+    setMessages(messages);
+  }, []);
+
   const appendSystemMessage = useCallback((content: string) => {
     setMessages(prev => [
       ...prev,
@@ -365,7 +383,8 @@ export const useAISDKAdapter = () => {
       handleStreamEvent,
       applyStatus,
       reset,
+      restoreMessages,
     }),
-    [messages, status, meta, handleStreamEvent, applyStatus, reset],
+    [messages, status, meta, handleStreamEvent, applyStatus, reset, restoreMessages],
   );
 };

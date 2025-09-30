@@ -15,6 +15,7 @@ import json
 from participants import create_participant_llm, get_participant_info
 import logging
 import re
+import uuid
 from datetime import datetime, timezone
 
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +41,7 @@ class ConversationGraph:
         self.current_state = None
         self.current_participants: List[str] = []
         self.current_topic: Optional[str] = None
+        self.current_conversation_id: Optional[str] = None
         self.conversation_started_at: Optional[datetime] = None
         self.mention_pattern = re.compile(r"@([A-Za-z0-9_-]+)")
 
@@ -532,10 +534,14 @@ class ConversationGraph:
         })
         return state
 
-    async def start_conversation(self, topic: str, participants: List[str] = None):
+    async def start_conversation(self, topic: str, participants: List[str] = None, conversation_id: Optional[str] = None):
         """Start a new conversation with given topic"""
         if participants is None:
             participants = ["Alice", "Bob", "Charlie"]
+
+        # Generate conversation ID if not provided
+        if conversation_id is None:
+            conversation_id = str(uuid.uuid4())
 
         initial_state = ConversationState(
             messages=[],
@@ -555,9 +561,11 @@ class ConversationGraph:
         self.current_state = initial_state
         self.current_participants = participants
         self.current_topic = topic
+        self.current_conversation_id = conversation_id
         self.conversation_started_at = datetime.now(timezone.utc)
 
         await self._emit_event("conversation_start", {
+            "conversation_id": conversation_id,
             "topic": topic,
             "participants": participants
         })
@@ -657,7 +665,32 @@ class ConversationGraph:
         self.current_state = None
         self.current_participants = []
         self.current_topic = None
+        self.current_conversation_id = None
         self.conversation_started_at = None
+
+    def get_conversation_snapshot(self) -> Optional[Dict[str, Any]]:
+        """Get a snapshot of the current conversation for reconnection"""
+        if not self.current_state:
+            return None
+
+        return {
+            "conversation_id": self.current_conversation_id,
+            "topic": self.current_topic,
+            "participants": self.current_participants,
+            "active": self.is_active(),
+            "paused": self.is_paused(),
+            "turn_count": self.current_state.get("turn_count", 0),
+            "message_count": len(self.current_state.get("messages", [])),
+            "started_at": self.conversation_started_at.isoformat() if self.conversation_started_at else None,
+            "messages": [
+                {
+                    "content": msg.content,
+                    "participant": msg.additional_kwargs.get("participant", "System") if hasattr(msg, "additional_kwargs") else ("System" if isinstance(msg, HumanMessage) else "AI"),
+                    "type": "human" if isinstance(msg, HumanMessage) else "ai"
+                }
+                for msg in self.current_state.get("messages", [])
+            ]
+        }
 
     def add_human_message_to_state(self, content: str) -> bool:
         """Add human message directly to current conversation state"""

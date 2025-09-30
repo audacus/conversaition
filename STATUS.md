@@ -11,12 +11,23 @@ Platform complete with participants management UI. Documentation restructure com
 - Multi-AI orchestration (Alice/OpenAI, Bob/Anthropic, Charlie/Gemini)
 - Real-time SSE streaming
 - Full conversation controls (start/pause/resume/stop/inject)
+- Conversation persistence with URL-based reconnection
 - Participants CRUD UI
-- Analytics dashboard with transcript viewer
+- Analytics dashboard with transcript viewer and ongoing conversation tracking
 - E2E Playwright tests
 - Dark theme UI
 
 ## Recent
+
+**Conversation Persistence (2025-09-30):**
+- ✅ Conversation ID generation and URL tracking
+- ✅ Message restoration on reconnection
+- Backend: UUID generation, snapshot endpoint, conversation state tracking
+- Frontend: URL updates with conversation ID, reconnection from URL with message restoration
+- Analytics: Ongoing conversations shown with "Rejoin" button
+- Option A behavior: Conversations continue in background when navigating away
+- Fix: Added restoreMessages method, used ref for reconnection tracking to prevent re-render loops
+- Note: Message attribution issue documented (participants can't reference each other)
 
 **Stop Endpoint Fix (2025-09-30):**
 - ✅ Fixed duration_seconds variable scope error in stop endpoint
@@ -79,11 +90,13 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Next
 
-1. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
-2. Fix stop button SSE behavior (backend continues after close)
-3. Enhance analytics: Charts, filters, search
-4. Export transcripts: JSON/Markdown download
-5. Test long conversations (50+ turns) for pagination needs
+1. Message attribution: Participants can't reference each other (messages lack speaker names in history)
+   - Solution: Pre-process messages before LLM input to include "Speaker: content" format
+   - Must be compatible with streaming (transform before passing to LLM)
+2. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
+3. Fix stop button SSE behavior (backend continues after close)
+4. Enhance analytics: Charts, filters, search
+5. Export transcripts: JSON/Markdown download
 
 ## Blockers
 
@@ -92,12 +105,13 @@ None
 ## Recent Files Changed
 
 **Modified:**
-- backend/main.py (fixed duration_seconds scope in stop endpoint)
-- backend/conversation_graph.py (fixed Gemini whitespace streaming)
-- backend/participants.py (removed api_key parameter)
-- DEV.md (clarified uvicorn command alternative)
-- CLAUDE.md (added Python venv location: backend/.venv/)
-- STATUS.md (documented fixes)
+- backend/conversation_graph.py (conversation ID tracking, snapshot method)
+- backend/main.py (conversation ID in responses, snapshot endpoint)
+- frontend/app/page.tsx (URL-based persistence, reconnection logic with ref tracking)
+- frontend/app/hooks/useConversationApi.ts (snapshot fetching)
+- frontend/app/hooks/useAISDKAdapter.ts (restoreMessages method)
+- frontend/app/analytics/page.tsx (ongoing conversation display)
+- STATUS.md (documented persistence feature and fix)
 
 ## Known Issues
 
@@ -124,6 +138,12 @@ None
 - Hook separation: useSSEStream + useAISDKAdapter
 - StrictMode safe: single global callback
 - Centralized status propagation
+
+**Conversation Persistence (2025-09-30):**
+- URL-based reconnection: Conversation ID in query params
+- Continue in background: Conversations persist when navigating away
+- Analytics integration: Ongoing conversations highlighted with rejoin button
+- Snapshot endpoint: GET /conversation/snapshot for state restoration
 
 **UI/UX (2025-09-30):**
 - Dark-first design: gray-900 background, optimized text contrast

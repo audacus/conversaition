@@ -111,6 +111,11 @@ export const useConversationApi = (baseUrl: string = DEFAULT_API_BASE) => {
     return (result?.participants ?? []) as ParticipantSummary[];
   }, [handleApiCall]);
 
+  const getConversationSnapshot = useCallback(async () => {
+    const result = await handleApiCall('/conversation/snapshot');
+    return result;
+  }, [handleApiCall]);
+
   return {
     // State
     status,
@@ -125,5 +130,6 @@ export const useConversationApi = (baseUrl: string = DEFAULT_API_BASE) => {
     sendMessage,
     getStatus,
     getParticipants,
+    getConversationSnapshot,
   };
 };
