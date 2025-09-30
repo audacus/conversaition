@@ -99,8 +99,7 @@ def create_participant_llm(participant_id: str):
             max_output_tokens=max_tokens,
             streaming=True,
             # Note: Gemini models may include reasoning/thinking in responses
-            # The conversation_graph filters out meta-instructions that start with *
-            api_key=os.getenv("GOOGLE_API_KEY"),
+            # The conversation_graph detects and filters reasoning tokens
         )
 
     raise ValueError(f"Unsupported provider: {provider}")

@@ -373,34 +373,32 @@ class ConversationGraph:
                 logger.info(f"[STREAM_ANALYSIS] {json.dumps(chunk_metadata, default=str)}")
 
                 # Detect thinking/reasoning tokens (Gemini 2.0+)
-                is_thinking = False
+                has_reasoning = False
                 if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
                     output_details = chunk.usage_metadata.get('output_token_details', {})
                     reasoning_tokens = output_details.get('reasoning', 0)
                     if reasoning_tokens > 0:
-                        is_thinking = True
-                        logger.info(f"{current_speaker} thinking: {reasoning_tokens} reasoning tokens")
+                        has_reasoning = True
+                        logger.info(f"{current_speaker} reasoning: {reasoning_tokens} tokens")
 
                 chunk_text = self._extract_chunk_text(chunk)
                 if not chunk_text:
                     # Empty chunks are normal at end of stream
                     continue
 
-                if is_thinking:
-                    # This chunk contains thinking/reasoning content
-                    thinking_content += chunk_text
-                    await self._emit_event("ai_thinking", {
-                        "participant": current_speaker,
-                        "content": chunk_text
-                    })
-                else:
-                    # Normal output content
-                    response_content += chunk_text
-                    await self._emit_event("ai_response_stream", {
-                        "participant": current_speaker,
-                        "content": chunk_text,
-                        "full_content": response_content
-                    })
+                # Gemini includes reasoning metadata even for output chunks
+                # Skip only whitespace-only chunks that have reasoning tokens
+                if has_reasoning and not chunk_text.strip():
+                    # Skip whitespace-only chunks during reasoning
+                    continue
+
+                # All other chunks are normal output
+                response_content += chunk_text
+                await self._emit_event("ai_response_stream", {
+                    "participant": current_speaker,
+                    "content": chunk_text,
+                    "full_content": response_content
+                })
 
             logger.info(f"{current_speaker} streaming complete: {chunk_count} chunks, {len(response_content)} chars output, {len(thinking_content)} chars thinking")
 
