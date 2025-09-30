@@ -18,6 +18,12 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Recent
 
+**Stop Endpoint Fix (2025-09-30):**
+- ✅ Fixed duration_seconds variable scope error in stop endpoint
+- Root cause: duration_seconds used before assignment in transcript persist
+- Solution: Calculate duration before persist call
+- Verified: Stop endpoint returns correct duration
+
 **Gemini Streaming Fix (2025-09-30):**
 - ✅ Fixed Gemini streaming: was working but emitting whitespace during reasoning
 - Root cause: Gemini 2.5 Pro outputs newlines during 200-1300 reasoning tokens
@@ -73,8 +79,8 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Next
 
-1. Fix stop endpoint duration_seconds bug
-2. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
+1. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
+2. Fix stop button SSE behavior (backend continues after close)
 3. Enhance analytics: Charts, filters, search
 4. Export transcripts: JSON/Markdown download
 5. Test long conversations (50+ turns) for pagination needs
@@ -86,14 +92,15 @@ None
 ## Recent Files Changed
 
 **Modified:**
-- backend/conversation_graph.py (fixed Gemini whitespace streaming, skip reasoning-only chunks)
-- backend/participants.py (removed api_key parameter, use environment variable)
+- backend/main.py (fixed duration_seconds scope in stop endpoint)
+- backend/conversation_graph.py (fixed Gemini whitespace streaming)
+- backend/participants.py (removed api_key parameter)
+- DEV.md (clarified uvicorn command alternative)
 - CLAUDE.md (added Python venv location: backend/.venv/)
-- STATUS.md (documented Gemini streaming fix)
+- STATUS.md (documented fixes)
 
 ## Known Issues
 
-- Stop endpoint crashes: "cannot access local variable 'duration_seconds'" error
 - Stop button closes SSE but backend continues until natural end
 - Long conversations (50+ turns) may need pagination
 - Python 3.13 escape sequence warnings (cosmetic)
