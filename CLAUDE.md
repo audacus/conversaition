@@ -2,7 +2,7 @@
 
 ## Project Context
 
-**Conversaition** - Multi-AI conversation platform with human oversight. Enterprise-ready MVP with 3 AI participants (Alice/OpenAI, Bob/Anthropic, Charlie/Gemini).
+**Conversaition** - Multi-AI conversation platform with human oversight.
 
 **Tech:** FastAPI + LangGraph + Next.js + TypeScript + AI SDK
 
@@ -43,9 +43,7 @@
 2. Document blockers clearly
 3. List 3 concrete next actions
 4. Add file changes section
-5. Create git commits (separate by concern)
-   - Stay in project folder
-   - One logical change per commit
+5. Create git commits (separate by concern, one logical change per commit)
 
 ## Task Management
 
@@ -64,30 +62,20 @@ Mark complete immediately after finishing.
 - Focus on specific task
 - Use TodoWrite to show progress
 
-## Documentation Structure
+## Documentation Reference
 
-**Root (for humans & AI):**
-- README.md - Overview, features, quick start
-- SETUP.md - Installation, troubleshooting
-- DEV.md - Commands, testing, contributing
-- STATUS.md - Current status, recent work, next actions
-- CLAUDE.md - This file
+**Root:**
+- README.md - Project overview, quick start
+- SETUP.md - Installation, troubleshooting → Use for setup issues
+- DEV.md - Commands, testing, contributing → Use for dev workflows
+- STATUS.md - Current state, recent work → Use for current work
+- CLAUDE.md - AI instructions (this file)
 
-**docs/ (reference):**
-- docs/ARCHITECTURE.md - System design, tech stack
-- docs/README.md - Doc hub
-- docs/api/README.md - API endpoints
-- docs/adr/README.md - Architecture decisions
+**docs/ (detailed reference):**
+- docs/ARCHITECTURE.md - System design → Use for system design questions
+- docs/api/README.md - API endpoints → Use for API details
+- docs/adr/README.md - Architecture decisions → Use for design decisions
 - docs/plans/README.md - Implementation plans
-
-## Quick Reference
-
-- Setup issues → SETUP.md
-- Commands → DEV.md
-- Current work → STATUS.md
-- API details → docs/api/README.md
-- Design decisions → docs/adr/README.md
-- System design → docs/ARCHITECTURE.md
 
 ## Project Structure
 
@@ -106,12 +94,6 @@ frontend/app/
 ├── hooks/                   # React hooks (useSSEStream, useAISDKAdapter)
 └── tests/                   # Playwright E2E
 ```
-
-## AI Models
-
-- Alice (OpenAI): gpt-4o-mini - analytical
-- Bob (Anthropic): claude-sonnet-4-5-20250929 - creative
-- Charlie (Google): gemini-2.5-pro - contrarian
 
 ## Key Standards
 
