@@ -18,10 +18,16 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Recent
 
+**Gemini Streaming Fix (2025-09-30):**
+- ✅ Fixed Gemini streaming: was working but emitting whitespace during reasoning
+- Root cause: Gemini 2.5 Pro outputs newlines during 200-1300 reasoning tokens
+- Solution: Skip whitespace-only chunks when reasoning metadata present
+- Verified: Charlie now streams properly without leading newlines
+
 **Streaming Analysis (2025-09-30):**
 - Added comprehensive metadata logging for all providers
 - Analyzed streaming patterns: Alice (~40-80 chunks), Bob (~9 chunks, efficient)
-- ❌ Discovered Gemini streaming broken: only 1 empty chunk despite streaming=True
+- Discovered Gemini streaming broken: only 1 empty chunk despite streaming=True
 - Removed GitHub Actions CI workflow (not in use)
 
 **Streaming Fixes (2025-09-30):**
@@ -67,11 +73,11 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Next
 
-1. ❌ Fix Gemini streaming (CRITICAL: currently not streaming at all)
-2. Fix stop endpoint duration_seconds bug
-3. Expose usage_metadata to frontend (tokens, cache stats)
-4. Enhance analytics: Charts, filters, search
-5. Export transcripts: JSON/Markdown download
+1. Fix stop endpoint duration_seconds bug
+2. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
+3. Enhance analytics: Charts, filters, search
+4. Export transcripts: JSON/Markdown download
+5. Test long conversations (50+ turns) for pagination needs
 
 ## Blockers
 
@@ -80,15 +86,13 @@ None
 ## Recent Files Changed
 
 **Modified:**
-- backend/conversation_graph.py (added comprehensive streaming metadata logging)
-- STATUS.md (documented streaming analysis findings, added critical Gemini bug)
-
-**Deleted:**
-- .github/workflows/playwright.yml (CI not in use)
+- backend/conversation_graph.py (fixed Gemini whitespace streaming, skip reasoning-only chunks)
+- backend/participants.py (removed api_key parameter, use environment variable)
+- CLAUDE.md (added Python venv location: backend/.venv/)
+- STATUS.md (documented Gemini streaming fix)
 
 ## Known Issues
 
-- ❌ CRITICAL: Gemini streaming broken - returns 1 empty chunk, content appears via fallback path
 - Stop endpoint crashes: "cannot access local variable 'duration_seconds'" error
 - Stop button closes SSE but backend continues until natural end
 - Long conversations (50+ turns) may need pagination

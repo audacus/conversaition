@@ -115,7 +115,11 @@ frontend/app/
 
 ## Key Standards
 
-**Python:** PEP 8, type hints, async/await, docstrings
+**Python:**
+- PEP 8, type hints, async/await, docstrings
+- Always use `backend/.venv/bin/python` directly (NOT `source .venv/bin/activate && python`)
+- Virtual environment is in `backend/.venv/`
+
 **TypeScript:** Strict mode, hooks only, functional components
 
 **Testing:**
