@@ -340,7 +340,38 @@ class ConversationGraph:
 
             response_content = ""
             thinking_content = ""
+            chunk_count = 0
+
             async for chunk in llm.astream(conversation_messages):
+                chunk_count += 1
+
+                # Log comprehensive chunk metadata for analysis
+                chunk_metadata = {
+                    "participant": current_speaker,
+                    "chunk_number": chunk_count,
+                    "chunk_type": type(chunk).__name__,
+                    "has_content": bool(getattr(chunk, 'content', None)),
+                    "content_length": len(getattr(chunk, 'content', '')) if hasattr(chunk, 'content') else 0,
+                }
+
+                # Capture all available metadata fields
+                if hasattr(chunk, 'response_metadata') and chunk.response_metadata:
+                    chunk_metadata['response_metadata'] = chunk.response_metadata
+
+                if hasattr(chunk, 'additional_kwargs') and chunk.additional_kwargs:
+                    chunk_metadata['additional_kwargs'] = chunk.additional_kwargs
+
+                if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
+                    chunk_metadata['usage_metadata'] = chunk.usage_metadata
+
+                if hasattr(chunk, 'tool_calls'):
+                    chunk_metadata['has_tool_calls'] = bool(chunk.tool_calls)
+
+                if hasattr(chunk, 'tool_call_chunks'):
+                    chunk_metadata['has_tool_call_chunks'] = bool(chunk.tool_call_chunks)
+
+                logger.info(f"[STREAM_ANALYSIS] {json.dumps(chunk_metadata, default=str)}")
+
                 # Detect thinking/reasoning tokens (Gemini 2.0+)
                 is_thinking = False
                 if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
@@ -370,6 +401,8 @@ class ConversationGraph:
                         "content": chunk_text,
                         "full_content": response_content
                     })
+
+            logger.info(f"{current_speaker} streaming complete: {chunk_count} chunks, {len(response_content)} chars output, {len(thinking_content)} chars thinking")
 
             if not response_content:
                 fallback_message = await llm.ainvoke(conversation_messages)
