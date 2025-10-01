@@ -1,7 +1,7 @@
 # Status
 
-**Date:** 2025-09-30
-**State:** Enterprise-ready MVP, documentation optimization complete
+**Date:** 2025-10-01
+**State:** MVP with critical bugs requiring fixes
 
 ## Current
 
@@ -18,6 +18,13 @@ Platform complete with participants management UI. Documentation restructure com
 - Dark theme UI
 
 ## Recent
+
+**Bug Fixes (2025-10-01):**
+- ✅ Fixed @Name placeholder in system prompts (Alice, Bob, Charlie)
+- ✅ Fixed initial topic message not appearing in conversation
+- ✅ Fixed analytics showing "undefined" in transcript URLs
+- ❌ Charlie (Gemini) leaking system prompt instructions in responses
+- ❌ Empty messages from participants (Bob line 47 in transcript)
 
 **Conversation Persistence (2025-09-30):**
 - ✅ Conversation ID generation and URL tracking
@@ -100,18 +107,25 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Blockers
 
-None
+**Critical bugs:**
+- ❌ Gemini (Charlie) leaks system prompt in responses (shows internal instructions to user)
+- ❌ Empty AI messages occasionally persisted to transcripts
 
 ## Recent Files Changed
 
-**Modified:**
+**Modified (2025-10-01):**
+- backend/participants_config.json (removed @Name placeholder, use actual names)
+- backend/conversation_graph.py (emit initial topic message event)
+- backend/storage.py (return filename field for analytics URLs)
+- STATUS.md (updated state to "MVP with critical bugs")
+
+**Modified (2025-09-30):**
 - backend/conversation_graph.py (conversation ID tracking, snapshot method)
 - backend/main.py (conversation ID in responses, snapshot endpoint)
-- frontend/app/page.tsx (URL-based persistence, reconnection logic with ref tracking)
+- frontend/app/page.tsx (URL-based persistence, reconnection logic)
 - frontend/app/hooks/useConversationApi.ts (snapshot fetching)
 - frontend/app/hooks/useAISDKAdapter.ts (restoreMessages method)
 - frontend/app/analytics/page.tsx (ongoing conversation display)
-- STATUS.md (documented persistence feature and fix)
 
 ## Known Issues
 
