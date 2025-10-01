@@ -571,8 +571,17 @@ class ConversationGraph:
         })
 
         # Add initial topic message
-        topic_message = HumanMessage(content=f"Let's discuss: {topic}")
+        topic_message = HumanMessage(
+            content=f"Let's discuss: {topic}",
+            additional_kwargs={"participant": "System"}
+        )
         initial_state["messages"] = [topic_message]
+
+        # Emit event for initial topic message so frontend displays it
+        await self._emit_event("human_message_added", {
+            "participant": "System",
+            "content": f"Let's discuss: {topic}"
+        })
 
         # Run the graph
         async for event in self.graph.astream(initial_state):
