@@ -20,11 +20,11 @@ Platform complete with participants management UI. Documentation restructure com
 ## Recent
 
 **Bug Fixes (2025-10-01):**
-- ✅ Fixed @Name placeholder in system prompts (Alice, Bob, Charlie)
-- ✅ Fixed initial topic message not appearing in conversation
-- ✅ Fixed analytics showing "undefined" in transcript URLs
-- ❌ Charlie (Gemini) leaking system prompt instructions in responses
-- ❌ Empty messages from participants (Bob line 47 in transcript)
+- ✅ Fixed @Name placeholder in system prompts (participants now use actual names: Alice, Bob, Charlie)
+- ✅ Fixed initial topic message not appearing in conversation UI
+- ✅ Fixed analytics showing "undefined" in transcript URLs (added filename field)
+- ✅ Fixed Gemini (Charlie) leaking system prompt instructions (use system_instruction parameter)
+- ✅ Fixed empty messages in transcripts (filter whitespace-only messages during persistence)
 
 **Conversation Persistence (2025-09-30):**
 - ✅ Conversation ID generation and URL tracking
@@ -107,17 +107,16 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Blockers
 
-**Critical bugs:**
-- ❌ Gemini (Charlie) leaks system prompt in responses (shows internal instructions to user)
-- ❌ Empty AI messages occasionally persisted to transcripts
+None
 
 ## Recent Files Changed
 
 **Modified (2025-10-01):**
 - backend/participants_config.json (removed @Name placeholder, use actual names)
-- backend/conversation_graph.py (emit initial topic message event)
-- backend/storage.py (return filename field for analytics URLs)
-- STATUS.md (updated state to "MVP with critical bugs")
+- backend/participants.py (Gemini system_instruction parameter, return system_prompt tuple)
+- backend/conversation_graph.py (emit initial topic message event, conditional system prompt)
+- backend/storage.py (filename field for analytics, filter empty messages)
+- STATUS.md (bug fixes and current state)
 
 **Modified (2025-09-30):**
 - backend/conversation_graph.py (conversation ID tracking, snapshot method)
