@@ -1,7 +1,7 @@
 # Status
 
 **Date:** 2025-10-01
-**State:** MVP stable, ready for enhancements
+**State:** MVP stable, message attribution complete
 
 ## Current
 
@@ -14,10 +14,19 @@ Platform complete with participants management UI. Documentation restructure com
 - Conversation persistence with URL-based reconnection
 - Participants CRUD UI
 - Analytics dashboard with transcript viewer and ongoing conversation tracking
+- Message attribution (participants can reference each other by name)
 - E2E Playwright tests
 - Dark theme UI
 
 ## Recent
+
+**Message Attribution (2025-10-01):**
+- ✅ Implemented message preprocessing with speaker attribution
+- Added `_preprocess_messages_with_speakers` method in conversation_graph.py
+- Messages now prefixed with `<Name>` format for LLM context
+- Updated system prompts to instruct LLMs not to echo format
+- Verified: Participants now reference each other by name in conversations
+- Changes: conversation_graph.py, participants_config.json
 
 **Bug Fixes (2025-10-01):**
 - ✅ Fixed SSE race condition causing first message attribution bug
@@ -101,12 +110,10 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Next
 
-1. Message attribution: Participants can't reference each other (messages lack speaker names in history)
-   - Solution: Pre-process messages before LLM input to include "Speaker: content" format
-   - Must be compatible with streaming (transform before passing to LLM)
-2. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
-3. Fix stop button SSE behavior (backend continues after close)
-4. Enhance analytics: Charts, filters, search
+1. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
+2. Fix stop button SSE behavior (backend continues after close)
+3. Enhance analytics: Charts, filters, search
+4. Refine message attribution to prevent occasional format mimicking
 
 ## Blockers
 
@@ -115,14 +122,14 @@ None
 ## Recent Files Changed
 
 **Modified (2025-10-01):**
+- backend/conversation_graph.py (_preprocess_messages_with_speakers method, speaker attribution with angle brackets)
+- backend/participants_config.json (updated system prompts with attribution format instructions)
 - backend/adapter.py (client_ready event signal, track connected clients with logging)
 - backend/main.py (wait for SSE client ready before starting conversation, 5s timeout)
 - frontend/app/page.tsx (connect to SSE before startConversation)
-- backend/participants_config.json (removed @Name placeholder, use actual names)
 - backend/participants.py (Gemini system_instruction parameter, return system_prompt tuple)
-- backend/conversation_graph.py (emit initial topic message event, conditional system prompt)
 - backend/storage.py (filename field for analytics, filter empty messages)
-- STATUS.md (SSE race condition fully resolved, MVP stable)
+- STATUS.md (message attribution complete)
 
 **Modified (2025-09-30):**
 - backend/conversation_graph.py (conversation ID tracking, snapshot method)

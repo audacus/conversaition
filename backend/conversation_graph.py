@@ -310,6 +310,39 @@ class ConversationGraph:
 
         return ""
 
+    def _preprocess_messages_with_speakers(self, messages: List[BaseMessage]) -> List[BaseMessage]:
+        """Add speaker attribution to message content for LLM context"""
+        processed_messages = []
+
+        for msg in messages:
+            # Extract participant name from additional_kwargs
+            participant = "System"
+            if hasattr(msg, "additional_kwargs") and isinstance(msg.additional_kwargs, dict):
+                participant = msg.additional_kwargs.get("participant", "System")
+            elif isinstance(msg, HumanMessage):
+                participant = "System"
+
+            # Get the content
+            content = msg.content if isinstance(msg.content, str) else str(msg.content)
+
+            # Create new message with speaker prefix using angle brackets (metadata-style format)
+            attributed_content = f"<{participant}> {content}"
+
+            if isinstance(msg, HumanMessage):
+                new_msg = HumanMessage(
+                    content=attributed_content,
+                    additional_kwargs=msg.additional_kwargs if hasattr(msg, "additional_kwargs") else {}
+                )
+            else:  # AIMessage
+                new_msg = AIMessage(
+                    content=attributed_content,
+                    additional_kwargs=msg.additional_kwargs if hasattr(msg, "additional_kwargs") else {}
+                )
+
+            processed_messages.append(new_msg)
+
+        return processed_messages
+
     async def _generate_ai_response(self, state: ConversationState) -> ConversationState:
         """Generate AI response for current speaker"""
         current_speaker = state["current_speaker"]
@@ -325,8 +358,10 @@ class ConversationGraph:
                 "model": participant_info["model"]
             })
 
+            # Preprocess messages to add speaker attribution
+            conversation_messages = self._preprocess_messages_with_speakers(messages)
+
             # Prepare messages with system prompt (only for providers that need it in messages)
-            conversation_messages = messages.copy()
             if system_prompt:
                 # OpenAI and Anthropic: Add system prompt as first message
                 conversation_messages = [HumanMessage(content=system_prompt)] + conversation_messages
