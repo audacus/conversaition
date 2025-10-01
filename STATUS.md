@@ -1,7 +1,7 @@
 # Status
 
 **Date:** 2025-10-01
-**State:** MVP with critical bugs requiring fixes
+**State:** MVP stable, ready for enhancements
 
 ## Current
 
@@ -20,13 +20,12 @@ Platform complete with participants management UI. Documentation restructure com
 ## Recent
 
 **Bug Fixes (2025-10-01):**
+- ✅ Fixed SSE race condition causing first message attribution bug
+  - Root cause: Backend emitted events before frontend SSE connection established
+  - Solution: Backend waits for SSE client ready signal (asyncio.Event) before starting conversation
+  - Changes: adapter.py tracks client_ready event, main.py waits with 5s timeout
+  - Verified: All messages now show correct participant attribution
 - ✅ Fixed @Name placeholder in system prompts (participants now use actual names: Alice, Bob, Charlie)
-- ⚠️ Partially fixed SSE race condition causing first message attribution bug
-  - Root cause: Backend emits events before frontend SSE connection established
-  - Fixed: adapter.py passes participant field in user-message events
-  - Fixed: page.tsx connects to SSE before calling startConversation
-  - Remaining: Connection is async, events still emitted before client ready
-  - Solution needed: Backend must wait for SSE client connection before starting conversation
 - ✅ Fixed analytics showing "undefined" in transcript URLs (added filename field)
 - ✅ Fixed Gemini (Charlie) leaking system prompt instructions (use system_instruction parameter)
 - ✅ Fixed empty messages in transcripts (filter whitespace-only messages during persistence)
@@ -102,16 +101,12 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Next
 
-1. **CRITICAL**: Fix SSE race condition (first message shows wrong attribution)
-   - Backend must wait for at least one SSE client before starting conversation
-   - Options: Add ready signal, delay start until client connected, queue early events
-   - Affects: All new conversations show Alice's content under "System" label
-2. Message attribution: Participants can't reference each other (messages lack speaker names in history)
+1. Message attribution: Participants can't reference each other (messages lack speaker names in history)
    - Solution: Pre-process messages before LLM input to include "Speaker: content" format
    - Must be compatible with streaming (transform before passing to LLM)
-3. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
-4. Fix stop button SSE behavior (backend continues after close)
-5. Enhance analytics: Charts, filters, search
+2. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
+3. Fix stop button SSE behavior (backend continues after close)
+4. Enhance analytics: Charts, filters, search
 
 ## Blockers
 
@@ -120,14 +115,14 @@ None
 ## Recent Files Changed
 
 **Modified (2025-10-01):**
-- backend/adapter.py (pass participant field in user-message events for SSE race condition)
-- frontend/app/page.tsx (connect to SSE before startConversation to reduce race window)
-- frontend/app/hooks/useAISDKAdapter.ts (removed debug console logs)
+- backend/adapter.py (client_ready event signal, track connected clients with logging)
+- backend/main.py (wait for SSE client ready before starting conversation, 5s timeout)
+- frontend/app/page.tsx (connect to SSE before startConversation)
 - backend/participants_config.json (removed @Name placeholder, use actual names)
 - backend/participants.py (Gemini system_instruction parameter, return system_prompt tuple)
 - backend/conversation_graph.py (emit initial topic message event, conditional system prompt)
 - backend/storage.py (filename field for analytics, filter empty messages)
-- STATUS.md (documented SSE race condition investigation and partial fixes)
+- STATUS.md (SSE race condition fully resolved, MVP stable)
 
 **Modified (2025-09-30):**
 - backend/conversation_graph.py (conversation ID tracking, snapshot method)

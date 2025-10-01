@@ -79,6 +79,14 @@ async def start_conversation(request: StartConversationRequest):
             import uuid
             conversation_id = str(uuid.uuid4())
 
+        # Wait for at least one SSE client to connect (with timeout)
+        logger.info("Waiting for SSE client to connect...")
+        try:
+            await asyncio.wait_for(conversation_streamer.client_ready.wait(), timeout=5.0)
+            logger.info("SSE client connected, starting conversation")
+        except asyncio.TimeoutError:
+            logger.warning("Timeout waiting for SSE client, starting conversation anyway")
+
         # Start conversation in background task
         conversation_task = asyncio.create_task(
             conversation_graph.start_conversation(request.topic, request.participants, conversation_id)

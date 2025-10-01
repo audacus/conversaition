@@ -165,15 +165,24 @@ class ConversationEventStreamer:
     def __init__(self):
         self.adapter = LangGraphToAISDKAdapter()
         self.clients = []
+        self.client_ready = asyncio.Event()
 
     def add_client(self, queue: asyncio.Queue):
         """Add SSE client queue"""
         self.clients.append(queue)
+        # Signal that at least one client is connected
+        if len(self.clients) == 1:
+            self.client_ready.set()
+        logger.info(f"Client added. Total clients: {len(self.clients)}")
 
     def remove_client(self, queue: asyncio.Queue):
         """Remove SSE client queue"""
         if queue in self.clients:
             self.clients.remove(queue)
+            # Clear ready signal if no clients remain
+            if len(self.clients) == 0:
+                self.client_ready.clear()
+            logger.info(f"Client removed. Total clients: {len(self.clients)}")
 
     async def handle_langgraph_event(self, langgraph_event: Dict[str, Any]):
         """Convert and broadcast LangGraph event to all clients"""
