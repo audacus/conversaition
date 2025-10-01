@@ -318,17 +318,18 @@ class ConversationGraph:
         try:
             # Get participant configuration
             participant_info = get_participant_info(current_speaker)
-            llm = create_participant_llm(current_speaker)
+            llm, system_prompt = create_participant_llm(current_speaker)
 
             await self._emit_event("ai_thinking_start", {
                 "participant": current_speaker,
                 "model": participant_info["model"]
             })
 
-            # Prepare messages with system prompt
-            conversation_messages = [
-                HumanMessage(content=participant_info["system_prompt"])
-            ] + messages
+            # Prepare messages with system prompt (only for providers that need it in messages)
+            conversation_messages = messages.copy()
+            if system_prompt:
+                # OpenAI and Anthropic: Add system prompt as first message
+                conversation_messages = [HumanMessage(content=system_prompt)] + conversation_messages
 
             # Add topic context if this is early in conversation
             if state.get("topic") and len(messages) < 2:

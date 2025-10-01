@@ -75,6 +75,7 @@ def create_participant_llm(participant_id: str):
     model = definition["model"]
     temperature = definition["temperature"]
     max_tokens = definition["max_tokens"]
+    system_prompt = definition["system_prompt"]
 
     if provider == "openai":
         return ChatOpenAI(
@@ -83,7 +84,7 @@ def create_participant_llm(participant_id: str):
             max_tokens=max_tokens,
             streaming=True,
             api_key=os.getenv("OPENAI_API_KEY"),
-        )
+        ), system_prompt
     if provider == "anthropic":
         return ChatAnthropic(
             model=model,
@@ -91,16 +92,16 @@ def create_participant_llm(participant_id: str):
             max_tokens=max_tokens,
             streaming=True,
             api_key=os.getenv("ANTHROPIC_API_KEY"),
-        )
+        ), system_prompt
     if provider == "gemini":
         return ChatGoogleGenerativeAI(
             model=model,
             temperature=temperature,
             max_output_tokens=max_tokens,
             streaming=True,
-            # Note: Gemini models may include reasoning/thinking in responses
-            # The conversation_graph detects and filters reasoning tokens
-        )
+            # Gemini uses system_instruction parameter - system prompt already set
+            system_instruction=system_prompt,
+        ), None  # System prompt handled by system_instruction parameter
 
     raise ValueError(f"Unsupported provider: {provider}")
 
