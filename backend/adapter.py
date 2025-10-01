@@ -111,7 +111,8 @@ class LangGraphToAISDKAdapter:
             return {
                 "type": "user-message",
                 "data": {
-                    "content": event_data.get("content")
+                    "content": event_data.get("content"),
+                    "participant": event_data.get("participant")
                 }
             }
 

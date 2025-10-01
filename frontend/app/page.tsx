@@ -244,6 +244,9 @@ export default function Home() {
         topic,
       });
 
+      // Connect to SSE stream BEFORE starting conversation to avoid missing early events
+      connect(handleStreamEvent);
+
       const result = await startConversation(topic, selectedParticipants);
       const conversationId = result.conversation_id;
 
@@ -259,8 +262,6 @@ export default function Home() {
         participants: selectedParticipants,
         topic,
       });
-
-      connect(handleStreamEvent);
     } catch (error) {
       console.error('Failed to start conversation:', error);
       setStreamError('Failed to start conversation. Check backend availability.');
