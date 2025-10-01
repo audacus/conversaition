@@ -56,13 +56,15 @@ class TranscriptStore:
             except Exception:
                 continue
 
+            metadata = data.get("metadata", {})
             transcripts.append({
-                "id": file_path.name,
+                "filename": file_path.name,
                 "topic": data.get("topic"),
                 "participants": data.get("participants", []),
-                "created_at": data.get("created_at"),
                 "message_count": len(data.get("messages", [])),
-                "metadata": data.get("metadata", {}),
+                "started_at": metadata.get("started_at"),
+                "ended_at": metadata.get("stopped_at"),
+                "duration_seconds": metadata.get("duration_seconds"),
             })
         return transcripts
 
