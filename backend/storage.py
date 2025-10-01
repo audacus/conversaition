@@ -33,11 +33,21 @@ class TranscriptStore:
         metadata: Optional[Mapping[str, Any]] = None,
     ) -> Path:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+        # Filter out empty messages (from interrupted streaming)
+        serialized_messages = [
+            self._serialise_message(message) for message in messages
+        ]
+        non_empty_messages = [
+            msg for msg in serialized_messages
+            if msg.get("content", "").strip()
+        ]
+
         payload = {
             "topic": topic,
             "participants": list(participants),
             "created_at": timestamp,
-            "messages": [self._serialise_message(message) for message in messages],
+            "messages": non_empty_messages,
         }
 
         if metadata:
