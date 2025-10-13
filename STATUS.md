@@ -1,7 +1,7 @@
 # Status
 
-**Date:** 2025-10-01
-**State:** MVP stable, message attribution complete
+**Date:** 2025-10-13
+**State:** MVP stable, frontend SSE event handling fixed
 
 ## Current
 
@@ -19,6 +19,17 @@ Platform complete with participants management UI. Documentation restructure com
 - Dark theme UI
 
 ## Recent
+
+**Frontend SSE Event Handling (2025-10-13):**
+- ✅ Fixed text-delta/text-done handlers overwriting System message with AI response
+  - Root cause: Fallback to `prev[prev.length - 1].id` when `pendingMessageIdRef.current` null
+  - Solution: Smart fallback - prefer pendingMessageIdRef, else find last streaming message matching participant
+  - Changes: useAISDKAdapter.ts (lines 217-233, 263-278)
+- ✅ Fixed attribution prefix leaking in displayed messages
+  - Messages showed `<Alice>`, `</System>` meant for LLM context only
+  - Solution: Strip prefixes with regex `/^<\/?[^>]+>\s*/g` in display layer
+  - Changes: page.tsx (stripAttributionPrefix function)
+- Verified: System message displays correctly, attribution prefixes hidden
 
 **Message Attribution (2025-10-01):**
 - ✅ Implemented message preprocessing with speaker attribution
@@ -120,6 +131,11 @@ Platform complete with participants management UI. Documentation restructure com
 None
 
 ## Recent Files Changed
+
+**Modified (2025-10-13):**
+- frontend/app/hooks/useAISDKAdapter.ts (text-delta/text-done safeguards, skip updates without pending message ID)
+- frontend/app/page.tsx (stripAttributionPrefix function, remove LLM context tags from display)
+- STATUS.md (frontend SSE event handling fixes)
 
 **Modified (2025-10-01):**
 - backend/conversation_graph.py (_preprocess_messages_with_speakers method, speaker attribution with angle brackets)
