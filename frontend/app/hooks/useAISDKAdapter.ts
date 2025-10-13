@@ -214,7 +214,23 @@ export const useAISDKAdapter = () => {
             return prev;
           }
 
-          const activeId = pendingMessageIdRef.current ?? prev[prev.length - 1].id;
+          // Prefer pending message ID, but fallback to last streaming message matching participant
+          let activeId = pendingMessageIdRef.current;
+
+          if (!activeId) {
+            // Find the last streaming message for this participant
+            const participant = event.data.participant;
+            const lastStreamingMsg = prev.slice().reverse().find(
+              msg => msg.isStreaming && (!participant || msg.participant === participant)
+            );
+
+            if (!lastStreamingMsg) {
+              console.warn('Received text-delta but no streaming message found, skipping');
+              return prev;
+            }
+
+            activeId = lastStreamingMsg.id;
+          }
 
           return prev.map(message =>
             message.id === activeId
@@ -244,7 +260,22 @@ export const useAISDKAdapter = () => {
             return prev;
           }
 
-          const activeId = pendingMessageIdRef.current ?? prev[prev.length - 1].id;
+          // Prefer pending message ID, but fallback to last streaming message matching participant
+          let activeId = pendingMessageIdRef.current;
+
+          if (!activeId) {
+            // Find the last streaming message for this participant
+            const lastStreamingMsg = prev.slice().reverse().find(
+              msg => msg.isStreaming && (!participant || msg.participant === participant)
+            );
+
+            if (!lastStreamingMsg) {
+              console.warn('Received text-done but no streaming message found, skipping');
+              return prev;
+            }
+
+            activeId = lastStreamingMsg.id;
+          }
 
           return prev.map(message =>
             message.id === activeId
