@@ -52,6 +52,11 @@ const formatTimestamp = (timestamp?: string) => {
   return parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 };
 
+const stripAttributionPrefix = (content: string) => {
+  // Remove attribution prefixes like <Alice>, </System>, <Bob>, etc. that are meant for LLM context only
+  return content.replace(/^<\/?[^>]+>\s*/g, '');
+};
+
 export default function Home() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -623,7 +628,7 @@ export default function Home() {
                           )}
                         </div>
                         <p className="text-sm text-gray-100 whitespace-pre-wrap leading-relaxed">
-                          {message.content || '…'}
+                          {stripAttributionPrefix(message.content) || '…'}
                         </p>
                       </div>
                     </li>
