@@ -99,7 +99,7 @@ PARTICIPANTS = {
         }
     },
     "Charlie": {
-        "provider": "gemini",
+        "provider": "google",
         "model": "gemini-2.5-flash",
         "config": {
             "temperature": 0.9,

@@ -16,7 +16,7 @@ from langchain_openai import ChatOpenAI
 
 
 CONFIG_PATH = Path(__file__).resolve().parent / "participants_config.json"
-ALLOWED_PROVIDERS = {"openai", "anthropic", "gemini"}
+ALLOWED_PROVIDERS = {"openai", "anthropic", "google"}
 
 
 def _load_config() -> Dict[str, Any]:
@@ -117,13 +117,13 @@ def create_participant_llm(participant_id: str):
             streaming=True,
             api_key=os.getenv("ANTHROPIC_API_KEY"),
         ), system_prompt
-    if provider == "gemini":
+    if provider == "google":
         return ChatGoogleGenerativeAI(
             model=model,
             temperature=temperature,
             max_output_tokens=max_tokens,
             streaming=True,
-            # Gemini uses system_instruction parameter - system prompt already set
+            # Google Gemini uses system_instruction parameter - system prompt already set
             system_instruction=system_prompt,
         ), None  # System prompt handled by system_instruction parameter
 
@@ -157,7 +157,7 @@ def create_coordinator_llm():
             max_tokens=max_tokens,
             api_key=os.getenv("ANTHROPIC_API_KEY"),
         ), system_prompt
-    if provider == "gemini":
+    if provider == "google":
         from pydantic import BaseModel, Field
         from typing import Literal
 

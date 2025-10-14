@@ -44,7 +44,7 @@ After:  turn_coordinator (LLM) → pause_check → ai_response → ...
 ```json
 {
   "_coordinator": {
-    "provider": "gemini",
+    "provider": "google",
     "model": "gemini-2.5-flash-lite",
     "temperature": 0.3,
     "max_tokens": 150

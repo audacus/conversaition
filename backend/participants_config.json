@@ -1,7 +1,7 @@
 {
   "_system_prompt_base": "Communication rules:\n- The conversation history shows messages in \"<message from=\\\"Name\\\">content</message>\" format.\n- Respond with ONLY your content—do NOT include your name, labels, or XML tags in your response.\n- Reference other participants by name when responding to their points.\n- Use <mention>Name</mention> to reference someone.\n- Use <request to=\\\"Name\\\">question</request> for direct questions.\n- Never claim to be any participant other than yourself.\n- Keep the discussion moving forward; avoid meta commentary about the conversation mechanics.",
   "_coordinator": {
-    "provider": "gemini",
+    "provider": "google",
     "model": "gemini-2.5-flash-lite",
     "temperature": 0.3,
     "max_tokens": 150,
@@ -29,7 +29,7 @@
     {
       "id": "Charlie",
       "name": "Charlie",
-      "provider": "gemini",
+      "provider": "google",
       "model": "gemini-2.5-pro",
       "temperature": 0.8,
       "max_tokens": 2048,
