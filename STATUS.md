@@ -5,10 +5,11 @@
 
 ## Current
 
-Platform complete with participants management UI. Documentation restructure complete: consolidated 7 root docs → 5, removed redundancy, cut ~54% tokens (5,200→2,400 words).
+Platform complete with participants management UI and intelligent LLM-based turn coordination. Documentation restructure complete: consolidated 7 root docs → 5, removed redundancy, cut ~54% tokens (5,200→2,400 words).
 
 **Features complete:**
 - Multi-AI orchestration (Alice/OpenAI, Bob/Anthropic, Charlie/Gemini)
+- Intelligent LLM-based turn coordination (OpenAI gpt-4o-mini coordinator)
 - Real-time SSE streaming
 - Full conversation controls (start/pause/resume/stop/inject)
 - Conversation persistence with URL-based reconnection
@@ -19,6 +20,18 @@ Platform complete with participants management UI. Documentation restructure com
 - Dark theme UI
 
 ## Recent
+
+**LLM-Based Turn Coordination - Phase 1 Complete (2025-10-14):**
+- ✅ TESTED AND WORKING: Intelligent LLM-based speaker selection operational
+- ✅ Coordinator: OpenAI gpt-4o-mini with JSON mode (Gemini failed JSON formatting)
+- ✅ Turn decisions with reasoning: "Bob's creative perspective essential", "Charlie provides contrarian view"
+- ✅ Fallback to round-robin working correctly on coordinator errors
+- ✅ Message format: `<message from="Name">content</message>` for attribution
+- ✅ Graph flow: turn_coordinator → pause_check → ai_response
+- ✅ Shared base prompt (_system_prompt_base) for communication rules
+- **Architecture:** docs/adr/007-llm-based-turn-coordination.md
+- **Test:** Multi-turn conversation successfully coordinated (Bob→Charlie→Alice pattern)
+- **Changes:** participants_config.json, participants.py, conversation_graph.py
 
 **Frontend SSE Event Handling - Complete Fix (2025-10-14):**
 - ✅ FULLY FIXED: React async state + rapid SSE events + StrictMode double-invocation
@@ -126,6 +139,7 @@ Platform complete with participants management UI. Documentation restructure com
 1. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
 2. Fix stop button SSE behavior (backend continues after close)
 3. Enhance analytics: Charts, filters, search
+4. Phase 2 turn coordination: Context-aware direct question detection
 
 ## Blockers
 
@@ -133,9 +147,16 @@ None
 
 ## Recent Files Changed
 
-**Modified (2025-10-14):**
+**Modified (2025-10-14 - Turn Coordinator):**
+- backend/participants_config.json (added _system_prompt_base, _coordinator config, simplified participant prompts)
+- backend/participants.py (load coordinator config, prepend base prompt, create_coordinator_llm function)
+- backend/conversation_graph.py (turn_coordinator node, <message> format, updated graph flow)
+- docs/adr/007-llm-based-turn-coordination.md (NEW: LLM-based turn coordination decision)
+- docs/adr/README.md (added ADR 007 to index)
+- STATUS.md (updated with turn coordinator implementation status)
+
+**Modified (2025-10-14 - SSE Fix):**
 - frontend/app/hooks/useAISDKAdapter.ts:312 (clear messageCreationGuardRef on turn-complete, removed debug logs)
-- STATUS.md (updated with complete fix status)
 - INVESTIGATION.md (documented final solution)
 
 **Modified (2025-10-01):**
