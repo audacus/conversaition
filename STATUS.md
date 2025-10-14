@@ -1,7 +1,7 @@
 # Status
 
-**Date:** 2025-10-13
-**State:** MVP stable, frontend SSE event handling fixed
+**Date:** 2025-10-14
+**State:** MVP stable, all SSE event handling issues resolved
 
 ## Current
 
@@ -20,16 +20,18 @@ Platform complete with participants management UI. Documentation restructure com
 
 ## Recent
 
-**Frontend SSE Event Handling (2025-10-13):**
-- ✅ Fixed text-delta/text-done handlers overwriting System message with AI response
-  - Root cause: Fallback to `prev[prev.length - 1].id` when `pendingMessageIdRef.current` null
-  - Solution: Smart fallback - prefer pendingMessageIdRef, else find last streaming message matching participant
-  - Changes: useAISDKAdapter.ts (lines 217-233, 263-278)
+**Frontend SSE Event Handling - Complete Fix (2025-10-14):**
+- ✅ FULLY FIXED: React async state + rapid SSE events + StrictMode double-invocation
+- ✅ All messages now display correctly across multiple turns
+  - Root cause: React's async setState queued message creation, but text-delta arrived before state update completed
+  - Solution: Lazy message creation - text-delta creates message on-demand if it doesn't exist yet
+  - Guard key issue resolved: Clear messageCreationGuardRef on turn-complete event
+  - Changes: useAISDKAdapter.ts:312 (clear guard in turn-complete handler)
 - ✅ Fixed attribution prefix leaking in displayed messages
-  - Messages showed `<Alice>`, `</System>` meant for LLM context only
   - Solution: Strip prefixes with regex `/^<\/?[^>]+>\s*/g` in display layer
   - Changes: page.tsx (stripAttributionPrefix function)
-- Verified: System message displays correctly, attribution prefixes hidden
+- ✅ Removed debug console.log statements
+- **Investigation doc:** INVESTIGATION.md documents root cause analysis, solution options
 
 **Message Attribution (2025-10-01):**
 - ✅ Implemented message preprocessing with speaker attribution
@@ -124,7 +126,6 @@ Platform complete with participants management UI. Documentation restructure com
 1. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
 2. Fix stop button SSE behavior (backend continues after close)
 3. Enhance analytics: Charts, filters, search
-4. Refine message attribution to prevent occasional format mimicking
 
 ## Blockers
 
@@ -132,10 +133,10 @@ None
 
 ## Recent Files Changed
 
-**Modified (2025-10-13):**
-- frontend/app/hooks/useAISDKAdapter.ts (text-delta/text-done safeguards, skip updates without pending message ID)
-- frontend/app/page.tsx (stripAttributionPrefix function, remove LLM context tags from display)
-- STATUS.md (frontend SSE event handling fixes)
+**Modified (2025-10-14):**
+- frontend/app/hooks/useAISDKAdapter.ts:312 (clear messageCreationGuardRef on turn-complete, removed debug logs)
+- STATUS.md (updated with complete fix status)
+- INVESTIGATION.md (documented final solution)
 
 **Modified (2025-10-01):**
 - backend/conversation_graph.py (_preprocess_messages_with_speakers method, speaker attribution with angle brackets)
