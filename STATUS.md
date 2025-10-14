@@ -1,15 +1,13 @@
 # Status
 
 **Date:** 2025-10-14
-**State:** MVP stable, all SSE event handling issues resolved
+**State:** MVP stable, coordinator improvements complete
 
 ## Current
 
-Platform complete with participants management UI and intelligent LLM-based turn coordination. Documentation restructure complete: consolidated 7 root docs → 5, removed redundancy, cut ~54% tokens (5,200→2,400 words).
-
 **Features complete:**
 - Multi-AI orchestration (Alice/OpenAI, Bob/Anthropic, Charlie/Gemini)
-- Intelligent LLM-based turn coordination (OpenAI gpt-4o-mini coordinator)
+- Intelligent LLM-based turn coordination (Gemini gemini-2.5-flash-lite coordinator with structured output)
 - Real-time SSE streaming
 - Full conversation controls (start/pause/resume/stop/inject)
 - Conversation persistence with URL-based reconnection
@@ -21,9 +19,17 @@ Platform complete with participants management UI and intelligent LLM-based turn
 
 ## Recent
 
+**Coordinator Improvements - Phase 2 (2025-10-14):**
+- ✅ Coordinator model switch: gpt-4o-mini → gemini-2.5-flash-lite (faster, cheaper, structured output)
+- ✅ Structured output: Gemini uses `.with_structured_output(CoordinatorDecision)` for type-safe responses
+- ✅ Dynamic participant descriptions: Loaded from config instead of hardcoded in prompt
+- ✅ Simplified coordinator prompt: Removed hardcoded participant list and JSON format instructions
+- ✅ Tested: 8 coordinator decisions with good reasoning across 2 test runs
+- **Changes:** participants_config.json (cleaner prompt), conversation_graph.py:155-166 (dynamic descriptions), participants.py:164-173 (structured output for Gemini)
+
 **LLM-Based Turn Coordination - Phase 1 Complete (2025-10-14):**
 - ✅ TESTED AND WORKING: Intelligent LLM-based speaker selection operational
-- ✅ Coordinator: OpenAI gpt-4o-mini with JSON mode (Gemini failed JSON formatting)
+- ✅ Coordinator: OpenAI gpt-4o-mini with JSON mode
 - ✅ Turn decisions with reasoning: "Bob's creative perspective essential", "Charlie provides contrarian view"
 - ✅ Fallback to round-robin working correctly on coordinator errors
 - ✅ Message format: `<message from="Name">content</message>` for attribution
@@ -146,6 +152,12 @@ Platform complete with participants management UI and intelligent LLM-based turn
 None
 
 ## Recent Files Changed
+
+**Modified (2025-10-14 - Coordinator Improvements):**
+- backend/participants_config.json (cleaned coordinator prompt, removed hardcoded participant list)
+- backend/conversation_graph.py:155-166 (dynamic participant descriptions from config)
+- backend/participants.py:164-173 (Gemini structured output with CoordinatorDecision Pydantic model)
+- STATUS.md (documented coordinator improvements)
 
 **Modified (2025-10-14 - Turn Coordinator):**
 - backend/participants_config.json (added _system_prompt_base, _coordinator config, simplified participant prompts)
