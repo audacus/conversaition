@@ -94,12 +94,14 @@ export const useAISDKAdapter = () => {
   const [status, setStatus] = useState<ConversationStatus>({ ...DEFAULT_STATUS });
   const [meta, setMeta] = useState<AdapterMetaState>(INITIAL_META_STATE);
   const pendingMessageIdRef = useRef<string | null>(null);
+  const messageCreationGuardRef = useRef<Set<string>>(new Set());
 
   const reset = useCallback(() => {
     setMessages([]);
     setStatus({ ...DEFAULT_STATUS });
     setMeta(INITIAL_META_STATE);
     pendingMessageIdRef.current = null;
+    messageCreationGuardRef.current.clear();
   }, []);
 
   const applyStatus = useCallback((payload: ConversationStatusPayload) => {
@@ -180,6 +182,17 @@ export const useAISDKAdapter = () => {
 
       case 'text-start': {
         const participant = event.data.participant ?? 'Participant';
+
+        // Guard against StrictMode double-invocation
+        const guardKey = `${participant}-${meta.turn}`;
+        if (messageCreationGuardRef.current.has(guardKey)) {
+          return;
+        }
+
+        messageCreationGuardRef.current.add(guardKey);
+
+        // Only set ref - message will be created lazily in text-delta
+        // This avoids race condition between async state update and rapid text-delta arrival
         const id = createMessageId(participant.toLowerCase() || 'participant');
         pendingMessageIdRef.current = id;
 
@@ -188,18 +201,6 @@ export const useAISDKAdapter = () => {
           thinkingParticipant: null,
           currentSpeaker: participant,
         }));
-
-        setMessages(prev => [
-          ...prev,
-          {
-            id,
-            participant,
-            content: '',
-            role: 'ai',
-            isStreaming: true,
-            complete: false,
-          },
-        ]);
         break;
       }
 
@@ -209,34 +210,39 @@ export const useAISDKAdapter = () => {
           break;
         }
 
+        const participant = event.data.participant ?? 'Participant';
+
         setMessages(prev => {
-          if (!prev.length) {
+          const refId = pendingMessageIdRef.current;
+
+          if (!refId) {
             return prev;
           }
 
-          // Prefer pending message ID, but fallback to last streaming message matching participant
-          let activeId = pendingMessageIdRef.current;
+          // Check if message exists
+          const existingMsg = prev.find(m => m.id === refId);
 
-          if (!activeId) {
-            // Find the last streaming message for this participant
-            const participant = event.data.participant;
-            const lastStreamingMsg = prev.slice().reverse().find(
-              msg => msg.isStreaming && (!participant || msg.participant === participant)
-            );
-
-            if (!lastStreamingMsg) {
-              console.warn('Received text-delta but no streaming message found, skipping');
-              return prev;
-            }
-
-            activeId = lastStreamingMsg.id;
+          if (!existingMsg) {
+            // Lazy creation: Message doesn't exist yet, create it now with first delta
+            // This solves race condition between text-start's async setState and text-delta arrival
+            return [
+              ...prev,
+              {
+                id: refId,
+                participant,
+                content: delta,
+                role: 'ai',
+                isStreaming: true,
+                complete: false,
+              },
+            ];
           }
 
+          // Update existing message
           return prev.map(message =>
-            message.id === activeId
+            message.id === refId
               ? {
                   ...message,
-                  participant: message.participant ?? event.data.participant ?? 'Participant',
                   content: `${message.content}${delta}`,
                   isStreaming: true,
                 }
@@ -302,6 +308,8 @@ export const useAISDKAdapter = () => {
           ...prev,
           turn: event.data.turn ?? prev.turn,
         }));
+        // Clear guard to allow next turn's messages
+        messageCreationGuardRef.current.clear();
         break;
       }
 
