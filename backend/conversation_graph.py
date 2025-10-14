@@ -152,8 +152,22 @@ class ConversationGraph:
             # Prepare conversation history for coordinator
             history_messages = self._preprocess_messages_with_speakers(messages)
 
+            # Build dynamic participant descriptions
+            participant_descriptions = []
+            for p_id in participants:
+                try:
+                    p_info = get_participant_info(p_id)
+                    # Extract first line of system prompt as description
+                    prompt_lines = p_info['system_prompt'].split('\n')
+                    description = prompt_lines[0].replace(f"You are {p_id}, ", "").replace(".", "")
+                    participant_descriptions.append(f"- {p_id}: {description}")
+                except Exception as e:
+                    logger.warning(f"Could not get info for participant {p_id}: {e}")
+                    participant_descriptions.append(f"- {p_id}")
+
             # Add context about topic and participants
-            context_message = f"Topic: {topic}\n\nAvailable participants: {', '.join(participants)}"
+            participants_list = '\n'.join(participant_descriptions)
+            context_message = f"Topic: {topic}\n\nAvailable participants:\n{participants_list}"
             if last_speaker:
                 context_message += f"\n\nLast speaker: {last_speaker}"
 
