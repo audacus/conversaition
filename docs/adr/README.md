@@ -80,9 +80,18 @@ Selected latest generation AI models: `gpt-4.1-mini`, `claude-sonnet-4-20250514`
 
 ---
 
+#### [007 - LLM-Based Turn Coordination](007-llm-based-turn-coordination.md)
+**Date**: 2025-10-14 | **Status**: Accepted
+
+Replace round-robin speaker selection with LLM-based turn coordination using Gemini 2.5 Flash Lite. Coordinator analyzes conversation context to intelligently select next speaker.
+
+**Key Decision**: Add dedicated coordinator node before ai_response, with fallback to round-robin on error.
+
+---
+
 ## ADR Index by Status
 
-### Accepted (6)
+### Accepted (7)
 All current ADRs are in active use and form the foundation of the system architecture.
 
 ### Deprecated (0)
@@ -106,6 +115,7 @@ No superseded decisions currently.
 
 ### AI & ML
 - 006 - AI Model Selection Strategy
+- 007 - LLM-Based Turn Coordination
 
 ## Creating New ADRs
 

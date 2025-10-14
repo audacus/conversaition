@@ -12,7 +12,7 @@ from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 import asyncio
 import json
-from participants import create_participant_llm, get_participant_info
+from participants import create_participant_llm, get_participant_info, create_coordinator_llm
 import logging
 import re
 import uuid
@@ -46,23 +46,23 @@ class ConversationGraph:
         self.mention_pattern = re.compile(r"@([A-Za-z0-9_-]+)")
 
     def _build_graph(self):
-        """Build the LangGraph conversation flow"""
+        """Build the LangGraph conversation flow with LLM-based turn coordination"""
         graph = StateGraph(ConversationState)
 
         # Core nodes
-        graph.add_node("scheduler", self._schedule_next_speaker)
+        graph.add_node("turn_coordinator", self._turn_coordinator)
         graph.add_node("pause_check", self._check_pause_status)
         graph.add_node("ai_response", self._generate_ai_response)
         graph.add_node("human_check", self._check_human_input)
         graph.add_node("end_turn", self._end_turn)
 
-        # Define flow
-        graph.set_entry_point("scheduler")
-        graph.add_edge("scheduler", "pause_check")
+        # Define flow: coordinator → pause → response → human_check → end_turn → loop
+        graph.set_entry_point("turn_coordinator")
+        graph.add_edge("turn_coordinator", "pause_check")
         graph.add_conditional_edges("pause_check", self._route_after_pause_check)
         graph.add_edge("ai_response", "human_check")
         graph.add_conditional_edges("human_check", self._route_after_human_check)
-        graph.add_edge("end_turn", "scheduler")
+        graph.add_edge("end_turn", "turn_coordinator")
 
         return graph.compile()
 
@@ -125,64 +125,112 @@ class ConversationGraph:
         state["preferred_bias_remaining"] = 0
         return state
 
-    async def _schedule_next_speaker(self, state: ConversationState) -> ConversationState:
-        """Determine next AI participant using round-robin"""
+    def _fallback_round_robin_speaker(self, state: ConversationState) -> str:
+        """Fallback: Determine next speaker using simple round-robin"""
+        participants = state.get("participants", [])
+        if not participants:
+            return ""
+
+        pointer = state.get("round_robin_pointer", 0) % len(participants)
+        return participants[pointer]
+
+    async def _turn_coordinator(self, state: ConversationState) -> ConversationState:
+        """Use LLM to intelligently select next speaker"""
         participants = state.get("participants", [])
         if not participants:
             self.current_state = state
             return state
 
-        pointer = state.get("round_robin_pointer", 0) % len(participants)
-        round_robin_candidate = participants[pointer]
-
-        preferred = state.get("preferred_next_speaker")
-        preferred_bias = state.get("preferred_bias_remaining", 0)
+        messages = state.get("messages", [])
+        topic = state.get("topic")
         last_speaker = state.get("current_speaker")
 
-        chosen_speaker = round_robin_candidate
-        next_pointer = (pointer + 1) % len(participants)
-        preferred_used = False
+        try:
+            # Create coordinator LLM
+            coordinator_llm, system_prompt = create_coordinator_llm()
 
-        has_valid_preference = (
-            preferred
-            and preferred_bias > 0
-            and preferred in participants
-            and preferred != last_speaker
-        )
+            # Prepare conversation history for coordinator
+            history_messages = self._preprocess_messages_with_speakers(messages)
 
-        if has_valid_preference:
-            if preferred == round_robin_candidate:
-                preferred_used = True
+            # Add context about topic and participants
+            context_message = f"Topic: {topic}\n\nAvailable participants: {', '.join(participants)}"
+            if last_speaker:
+                context_message += f"\n\nLast speaker: {last_speaker}"
+
+            context_message += "\n\nWho should speak next?"
+
+            # Add system prompt if not using Gemini
+            if system_prompt:
+                history_messages = [HumanMessage(content=system_prompt)] + history_messages
+
+            history_messages.append(HumanMessage(content=context_message))
+
+            # Get coordinator decision
+            response = await coordinator_llm.ainvoke(history_messages)
+
+            # Handle structured output (Pydantic) or JSON string
+            if hasattr(response, 'next_speaker'):
+                # Structured output (Pydantic object)
+                chosen_speaker = response.next_speaker
+                reasoning = response.reasoning
+                logger.info(f"Coordinator decision: {chosen_speaker} - {reasoning}")
             else:
-                chosen_speaker = preferred
-                preferred_used = True
-                # keep pointer the same so the skipped round-robin participant speaks next
-                next_pointer = pointer
+                # JSON string response
+                response_text = self._coalesce_message_content(response)
+                logger.info(f"Coordinator response: {response_text}")
+                decision_data = json.loads(response_text)
+                chosen_speaker = decision_data.get("next_speaker")
+                reasoning = decision_data.get("reasoning", "No reasoning provided")
 
-        if preferred_used:
-            preferred_bias = max(preferred_bias - 1, 0)
-            if preferred_bias == 0:
-                preferred = None
-        else:
-            preferred = None
-            preferred_bias = 0
+            # Validate speaker
+            if chosen_speaker not in participants:
+                logger.warning(f"Coordinator selected invalid participant '{chosen_speaker}', falling back to round-robin")
+                chosen_speaker = self._fallback_round_robin_speaker(state)
+                reasoning = f"Fallback: coordinator selected invalid participant"
 
-        await self._emit_event("speaker_scheduled", {
-            "next_speaker": chosen_speaker,
-            "turn": state.get("turn_count", 0)
-        })
+            # Emit coordinator decision event
+            await self._emit_event("turn_decision", {
+                "next_speaker": chosen_speaker,
+                "reasoning": reasoning,
+                "turn": state.get("turn_count", 0)
+            })
 
-        updated_state = {
-            **state,
-            "current_speaker": chosen_speaker,
-            "round_robin_pointer": next_pointer,
-            "preferred_next_speaker": preferred,
-            "preferred_bias_remaining": preferred_bias,
-        }
+            # Update round-robin pointer for next fallback
+            pointer = state.get("round_robin_pointer", 0)
+            next_pointer = (pointer + 1) % len(participants)
 
-        self.current_state = updated_state
+            updated_state = {
+                **state,
+                "current_speaker": chosen_speaker,
+                "round_robin_pointer": next_pointer,
+            }
 
-        return updated_state
+            self.current_state = updated_state
+            return updated_state
+
+        except Exception as e:
+            logger.error(f"Error in turn coordinator: {e}, falling back to round-robin")
+
+            # Fallback to round-robin
+            chosen_speaker = self._fallback_round_robin_speaker(state)
+
+            await self._emit_event("turn_decision", {
+                "next_speaker": chosen_speaker,
+                "reasoning": f"Fallback: coordinator error - {str(e)}",
+                "turn": state.get("turn_count", 0)
+            })
+
+            pointer = state.get("round_robin_pointer", 0)
+            next_pointer = (pointer + 1) % len(participants)
+
+            updated_state = {
+                **state,
+                "current_speaker": chosen_speaker,
+                "round_robin_pointer": next_pointer,
+            }
+
+            self.current_state = updated_state
+            return updated_state
 
     def _extract_chunk_text(self, chunk: Any) -> str:
         """Normalize streamed chunk payloads across providers into plain text."""
@@ -311,7 +359,7 @@ class ConversationGraph:
         return ""
 
     def _preprocess_messages_with_speakers(self, messages: List[BaseMessage]) -> List[BaseMessage]:
-        """Add speaker attribution to message content for LLM context"""
+        """Add speaker attribution to message content for LLM context using <message> wrapper"""
         processed_messages = []
 
         for msg in messages:
@@ -325,8 +373,8 @@ class ConversationGraph:
             # Get the content
             content = msg.content if isinstance(msg.content, str) else str(msg.content)
 
-            # Create new message with speaker prefix using angle brackets (metadata-style format)
-            attributed_content = f"<{participant}> {content}"
+            # Create new message with <message from="Name">content</message> format
+            attributed_content = f'<message from="{participant}">{content}</message>'
 
             if isinstance(msg, HumanMessage):
                 new_msg = HumanMessage(

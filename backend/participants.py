@@ -19,19 +19,31 @@ CONFIG_PATH = Path(__file__).resolve().parent / "participants_config.json"
 ALLOWED_PROVIDERS = {"openai", "anthropic", "gemini"}
 
 
-def _load_config() -> Dict[str, Dict[str, Any]]:
+def _load_config() -> Dict[str, Any]:
     if not CONFIG_PATH.exists():
         raise FileNotFoundError(
             "Participant configuration file not found. "
-            f"Expected path: {CONFIG_PATH}" 
+            f"Expected path: {CONFIG_PATH}"
         )
 
     with CONFIG_PATH.open("r", encoding="utf-8") as config_file:
         raw = json.load(config_file)
 
+    # Extract base system prompt
+    base_prompt = raw.get("_system_prompt_base", "")
+
+    # Extract coordinator config
+    coordinator_config = raw.get("_coordinator")
+
     participants: Dict[str, Dict[str, Any]] = {}
     for entry in raw.get("participants", []):
         participant_id = entry["id"]
+
+        # Prepend base prompt to participant's system prompt
+        participant_prompt = entry["system_prompt"]
+        if base_prompt:
+            participant_prompt = f"{base_prompt}\n\n{participant_prompt}"
+
         participants[participant_id] = {
             "id": participant_id,
             "name": entry.get("name", participant_id),
@@ -39,34 +51,46 @@ def _load_config() -> Dict[str, Dict[str, Any]]:
             "model": entry["model"],
             "temperature": float(entry.get("temperature", 0.7)),
             "max_tokens": int(entry.get("max_tokens", 256)),
-            "system_prompt": entry["system_prompt"],
+            "system_prompt": participant_prompt,
         }
 
     if not participants:
         raise ValueError("No participants defined in participants_config.json")
 
-    return participants
+    return {
+        "participants": participants,
+        "coordinator": coordinator_config,
+        "base_prompt": base_prompt
+    }
 
 
 @lru_cache(maxsize=1)
-def _participants() -> Dict[str, Dict[str, Any]]:
+def _config_cache() -> Dict[str, Any]:
     return _load_config()
 
 
 def refresh_participants_cache() -> None:
     """Clear cached participants (call after editing the config file)."""
-    _participants.cache_clear()  # type: ignore[attr-defined]
+    _config_cache.cache_clear()  # type: ignore[attr-defined]
 
 
 def get_participant_info(participant_id: str) -> Dict[str, Any]:
-    participants = _participants()
+    config = _config_cache()
+    participants = config["participants"]
     if participant_id not in participants:
         raise ValueError(f"Unknown participant: {participant_id}")
     return participants[participant_id]
 
 
 def get_all_participants() -> Dict[str, Dict[str, Any]]:
-    return dict(_participants())
+    config = _config_cache()
+    return dict(config["participants"])
+
+
+def get_coordinator_config() -> Dict[str, Any] | None:
+    """Get coordinator configuration if defined."""
+    config = _config_cache()
+    return config.get("coordinator")
 
 
 def create_participant_llm(participant_id: str):
@@ -104,6 +128,51 @@ def create_participant_llm(participant_id: str):
         ), None  # System prompt handled by system_instruction parameter
 
     raise ValueError(f"Unsupported provider: {provider}")
+
+
+def create_coordinator_llm():
+    """Create LLM for turn coordination."""
+    coordinator_config = get_coordinator_config()
+    if not coordinator_config:
+        raise ValueError("No coordinator configuration defined")
+
+    provider = coordinator_config["provider"]
+    model = coordinator_config["model"]
+    temperature = coordinator_config.get("temperature", 0.3)
+    max_tokens = coordinator_config.get("max_tokens", 150)
+    system_prompt = coordinator_config.get("system_prompt", "")
+
+    if provider == "openai":
+        return ChatOpenAI(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            api_key=os.getenv("OPENAI_API_KEY"),
+            model_kwargs={"response_format": {"type": "json_object"}},
+        ), system_prompt
+    if provider == "anthropic":
+        return ChatAnthropic(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            api_key=os.getenv("ANTHROPIC_API_KEY"),
+        ), system_prompt
+    if provider == "gemini":
+        from pydantic import BaseModel, Field
+        from typing import Literal
+
+        class CoordinatorDecision(BaseModel):
+            next_speaker: Literal["Alice", "Bob", "Charlie"] = Field(description="Name of the participant who should speak next")
+            reasoning: str = Field(description="Brief explanation in 1-2 sentences")
+
+        return ChatGoogleGenerativeAI(
+            model=model,
+            temperature=temperature,
+            max_output_tokens=max_tokens,
+            system_instruction=system_prompt,
+        ).with_structured_output(CoordinatorDecision), None  # System prompt handled by system_instruction parameter
+
+    raise ValueError(f"Unsupported coordinator provider: {provider}")
 
 
 def validate_participant(data: Dict[str, Any]) -> List[str]:
@@ -152,7 +221,13 @@ def validate_participant(data: Dict[str, Any]) -> List[str]:
 
 def atomic_write_config(participants: List[Dict[str, Any]]) -> None:
     """Atomically write participants config using temp file + move pattern."""
-    config_data = {"participants": participants}
+    # Preserve base prompt and coordinator config
+    config = _config_cache()
+    config_data = {
+        "_system_prompt_base": config.get("base_prompt", ""),
+        "_coordinator": config.get("coordinator"),
+        "participants": participants
+    }
 
     # Write to temporary file in the same directory
     temp_fd, temp_path = tempfile.mkstemp(
