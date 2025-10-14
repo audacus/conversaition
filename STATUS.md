@@ -44,7 +44,7 @@ Platform complete with participants management UI and intelligent LLM-based turn
   - Solution: Strip prefixes with regex `/^<\/?[^>]+>\s*/g` in display layer
   - Changes: page.tsx (stripAttributionPrefix function)
 - ✅ Removed debug console.log statements
-- **Investigation doc:** INVESTIGATION.md documents root cause analysis, solution options
+- **Investigation doc:** docs/archive/2025-10-14-sse-react-async-state-fix.md documents root cause analysis, solution options
 
 **Message Attribution (2025-10-01):**
 - ✅ Implemented message preprocessing with speaker attribution
@@ -157,7 +157,7 @@ None
 
 **Modified (2025-10-14 - SSE Fix):**
 - frontend/app/hooks/useAISDKAdapter.ts:312 (clear messageCreationGuardRef on turn-complete, removed debug logs)
-- INVESTIGATION.md (documented final solution)
+- docs/archive/2025-10-14-sse-react-async-state-fix.md (documented final solution)
 
 **Modified (2025-10-01):**
 - backend/conversation_graph.py (_preprocess_messages_with_speakers method, speaker attribution with angle brackets)
