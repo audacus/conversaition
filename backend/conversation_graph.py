@@ -407,6 +407,11 @@ class ConversationGraph:
 
     async def _generate_ai_response(self, state: ConversationState) -> ConversationState:
         """Generate AI response for current speaker"""
+        # Early exit if conversation was stopped
+        if not state.get("conversation_active", True):
+            logger.info("Conversation stopped, skipping AI response generation")
+            return state
+
         current_speaker = state["current_speaker"]
         messages = state["messages"]
 
@@ -610,6 +615,8 @@ class ConversationGraph:
         """Route after checking pause status"""
         if state.get("conversation_paused", False):
             return "pause_check"  # Stay in pause check until resumed
+        elif not state.get("conversation_active", True):
+            return END  # Stop conversation if inactive
         else:
             return "ai_response"
 

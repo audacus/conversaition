@@ -19,6 +19,13 @@
 
 ## Recent
 
+**Stop Button Fix (2025-10-14):**
+- ✅ Fixed stop button behavior - backend now terminates immediately
+- ✅ Added `conversation_active` check in `_route_after_pause_check` to exit before expensive AI response
+- ✅ Added early exit guard in `_generate_ai_response` for redundancy
+- ✅ Tested: Conversation stops mid-stream when stop clicked (9s vs continuing indefinitely)
+- **Changes:** conversation_graph.py:611-616 (routing check), conversation_graph.py:410-413 (early exit)
+
 **Coordinator Improvements - Phase 2 (2025-10-14):**
 - ✅ Coordinator model switch: gpt-4o-mini → gemini-2.5-flash-lite (faster, cheaper, structured output)
 - ✅ Structured output: Gemini uses `.with_structured_output(CoordinatorDecision)` for type-safe responses
@@ -143,15 +150,19 @@
 ## Next
 
 1. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
-2. Fix stop button SSE behavior (backend continues after close)
-3. Enhance analytics: Charts, filters, search
-4. Phase 2 turn coordination: Context-aware direct question detection
+2. Enhance analytics: Charts, filters, search
+3. Phase 2 turn coordination: Context-aware direct question detection
 
 ## Blockers
 
 None
 
 ## Recent Files Changed
+
+**Modified (2025-10-14 - Stop Button Fix):**
+- backend/conversation_graph.py:611-616 (check conversation_active in _route_after_pause_check)
+- backend/conversation_graph.py:410-413 (early exit in _generate_ai_response if not active)
+- STATUS.md (documented stop button fix, removed from Next/Known Issues)
 
 **Modified (2025-10-14 - Coordinator Improvements):**
 - backend/participants_config.json (cleaned coordinator prompt, removed hardcoded participant list)
@@ -191,7 +202,6 @@ None
 
 ## Known Issues
 
-- Stop button closes SSE but backend continues until natural end
 - Long conversations (50+ turns) may need pagination
 - Python 3.13 escape sequence warnings (cosmetic)
 - Analytics: Some transcript metadata incomplete (duration/timestamps show NaN/Invalid Date)
