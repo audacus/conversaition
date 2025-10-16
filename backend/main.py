@@ -47,7 +47,7 @@ async def root():
 # Pydantic models
 class StartConversationRequest(BaseModel):
     topic: str
-    participants: list[str] = ["Alice", "Bob", "Charlie"]
+    participants: list[str] = ["Human", "Alice", "Bob", "Charlie"]
 
 class AddMessageRequest(BaseModel):
     content: str
@@ -147,23 +147,38 @@ async def add_human_message(request: AddMessageRequest):
 
         logger.info(f"Human message: {request.content}")
 
-        # Add human message to conversation state
-        success = conversation_graph.add_human_message_to_state(request.content)
+        # Check if it's currently Human's turn (waiting for human input)
+        current_state = conversation_graph.current_state
+        is_human_turn = current_state and current_state.get("current_speaker") == "Human"
 
-        if success:
-            # Broadcast human message event
-            await conversation_streamer.handle_langgraph_event({
-                "type": "human_message_added",
-                "data": {
-                    "content": request.content,
-                    "participant": "Human",
-                    "timestamp": asyncio.get_event_loop().time()
-                }
-            })
-
-            return {"status": "added", "content": request.content}
+        if is_human_turn:
+            # Human's turn - signal the waiting graph
+            logger.info("Human's turn - signaling event")
+            conversation_graph.pending_human_message = request.content
+            conversation_graph.human_input_event.set()
         else:
-            raise HTTPException(status_code=400, detail="Failed to add message to conversation")
+            # Not Human's turn - give Human next turn
+            logger.info("Not Human's turn - giving Human next turn")
+            success = conversation_graph.add_human_message_to_state(request.content)
+            if not success:
+                raise HTTPException(status_code=400, detail="Failed to add message to conversation")
+
+            # Set preferred next speaker to Human
+            if current_state:
+                current_state["preferred_next_speaker"] = "Human"
+                current_state["preferred_bias_remaining"] = 1
+
+        # Broadcast human message event
+        await conversation_streamer.handle_langgraph_event({
+            "type": "human_message_added",
+            "data": {
+                "content": request.content,
+                "participant": "Human",
+                "timestamp": asyncio.get_event_loop().time()
+            }
+        })
+
+        return {"status": "added", "content": request.content}
 
     except Exception as e:
         logger.error(f"Error adding human message: {e}")

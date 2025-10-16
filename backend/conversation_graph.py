@@ -33,6 +33,8 @@ class ConversationState(TypedDict):
     preferred_next_speaker: Optional[str]
     preferred_bias_remaining: int
     round_robin_pointer: int
+    requests: List[str]  # Format: ["Alice:Human", "Bob:Charlie"]
+    mentions: List[str]  # Format: ["Alice:Bob", "Charlie:Alice"]
 
 class ConversationGraph:
     def __init__(self):
@@ -43,7 +45,10 @@ class ConversationGraph:
         self.current_topic: Optional[str] = None
         self.current_conversation_id: Optional[str] = None
         self.conversation_started_at: Optional[datetime] = None
-        self.mention_pattern = re.compile(r"@([A-Za-z0-9_-]+)")
+        self.mention_pattern = re.compile(r"<mention>([A-Za-z0-9_-]+)</mention>")
+        self.request_pattern = re.compile(r'<request to="([A-Za-z0-9_-]+)">')
+        self.human_input_event = asyncio.Event()
+        self.pending_human_message: Optional[str] = None
 
     def _build_graph(self):
         """Build the LangGraph conversation flow with LLM-based turn coordination"""
@@ -84,6 +89,46 @@ class ConversationGraph:
             except Exception as e:
                 logger.error(f"Error in event callback: {e}")
 
+    def _extract_requests(
+        self,
+        content: Optional[str],
+        participants: List[str],
+        current_speaker: Optional[str],
+    ) -> List[str]:
+        """Extract request targets from message content. Returns format ['Speaker:Target']"""
+        if not content or not current_speaker:
+            return []
+
+        matches = self.request_pattern.findall(content)
+        if not matches:
+            return []
+
+        requests = []
+        for match in matches:
+            if match in participants and match != current_speaker:
+                requests.append(f"{current_speaker}:{match}")
+        return requests
+
+    def _extract_mentions(
+        self,
+        content: Optional[str],
+        participants: List[str],
+        current_speaker: Optional[str],
+    ) -> List[str]:
+        """Extract mentions from message content. Returns format ['Speaker:Mentioned']"""
+        if not content or not current_speaker:
+            return []
+
+        matches = self.mention_pattern.findall(content)
+        if not matches:
+            return []
+
+        mentions = []
+        for match in matches:
+            if match in participants and match != current_speaker:
+                mentions.append(f"{current_speaker}:{match}")
+        return mentions
+
     def _extract_preferred_target(
         self,
         content: Optional[str],
@@ -94,13 +139,18 @@ class ConversationGraph:
         if not content:
             return None
 
-        matches = self.mention_pattern.findall(content)
-        if not matches:
-            return None
+        # Check requests first (higher priority)
+        requests = self._extract_requests(content, participants, current_speaker)
+        if requests:
+            # Return the target from first request
+            return requests[0].split(":")[1]
 
-        for match in matches:
-            if match in participants and match != current_speaker:
-                return match
+        # Then check mentions
+        mentions = self._extract_mentions(content, participants, current_speaker)
+        if mentions:
+            # Return the target from first mention
+            return mentions[0].split(":")[1]
+
         return None
 
     def _apply_preferred_speaker(
@@ -111,6 +161,18 @@ class ConversationGraph:
     ) -> ConversationState:
         """Update state with a preferred next speaker when one is mentioned explicitly."""
         participants = state.get("participants", [])
+
+        # Extract requests and mentions
+        requests = self._extract_requests(content, participants, current_speaker)
+        mentions = self._extract_mentions(content, participants, current_speaker)
+
+        # Add to state lists
+        if requests:
+            state["requests"] = state.get("requests", []) + requests
+        if mentions:
+            state["mentions"] = state.get("mentions", []) + mentions
+
+        # Determine preferred target
         target = self._extract_preferred_target(content, participants, current_speaker)
 
         if target:
@@ -372,6 +434,46 @@ class ConversationGraph:
 
         return ""
 
+    async def _wait_for_human_input(self, state: ConversationState) -> ConversationState:
+        """Wait for human to provide input via inject endpoint"""
+        logger.info("Waiting for human input...")
+
+        # Clear the event before waiting
+        self.human_input_event.clear()
+
+        # Wait indefinitely for human input (no timeout per requirements)
+        await self.human_input_event.wait()
+
+        logger.info(f"Human input received: {self.pending_human_message}")
+
+        # Add human message to state
+        if self.pending_human_message:
+            human_message = AIMessage(  # Use AIMessage to match participant pattern
+                content=self.pending_human_message,
+                additional_kwargs={"participant": "Human"}
+            )
+
+            updated_state: ConversationState = {
+                **state,
+                "messages": state["messages"] + [human_message],
+                "turn_count": state.get("turn_count", 0) + 1
+            }
+
+            # Track requests and mentions from human message
+            updated_state = self._apply_preferred_speaker(
+                updated_state,
+                self.pending_human_message,
+                "Human"
+            )
+
+            # Clear pending message
+            self.pending_human_message = None
+            self.current_state = updated_state
+
+            return updated_state
+
+        return state
+
     def _preprocess_messages_with_speakers(self, messages: List[BaseMessage]) -> List[BaseMessage]:
         """Add speaker attribution to message content for LLM context using <message> wrapper"""
         processed_messages = []
@@ -414,6 +516,14 @@ class ConversationGraph:
 
         current_speaker = state["current_speaker"]
         messages = state["messages"]
+
+        # Handle Human participant - wait for user input
+        if current_speaker == "Human":
+            await self._emit_event("human_input_requested", {
+                "participant": "Human",
+                "turn": state.get("turn_count", 0)
+            })
+            return await self._wait_for_human_input(state)
 
         try:
             # Get participant configuration
@@ -642,7 +752,7 @@ class ConversationGraph:
     async def start_conversation(self, topic: str, participants: List[str] = None, conversation_id: Optional[str] = None):
         """Start a new conversation with given topic"""
         if participants is None:
-            participants = ["Alice", "Bob", "Charlie"]
+            participants = ["Human", "Alice", "Bob", "Charlie"]
 
         # Generate conversation ID if not provided
         if conversation_id is None:
@@ -659,7 +769,9 @@ class ConversationGraph:
             topic=topic,
             preferred_next_speaker=None,
             preferred_bias_remaining=0,
-            round_robin_pointer=0
+            round_robin_pointer=0,
+            requests=[],
+            mentions=[]
         )
 
         # Store current state for pause/resume control
@@ -675,16 +787,16 @@ class ConversationGraph:
             "participants": participants
         })
 
-        # Add initial topic message
+        # Add initial topic message from Human
         topic_message = HumanMessage(
             content=f"Let's discuss: {topic}",
-            additional_kwargs={"participant": "System"}
+            additional_kwargs={"participant": "Human"}
         )
         initial_state["messages"] = [topic_message]
 
         # Emit event for initial topic message so frontend displays it
         await self._emit_event("human_message_added", {
-            "participant": "System",
+            "participant": "Human",
             "content": f"Let's discuss: {topic}"
         })
 

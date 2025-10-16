@@ -9,6 +9,12 @@
   },
   "participants": [
     {
+      "id": "Human",
+      "name": "Human",
+      "provider": "human",
+      "system_prompt": "You are the human moderator who initiated this discussion. You can participate naturally and ask questions at any time."
+    },
+    {
       "id": "Alice",
       "name": "Alice",
       "provider": "openai",

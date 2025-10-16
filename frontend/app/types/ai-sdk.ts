@@ -17,6 +17,7 @@ export interface AdapterMetaState {
   startedAt: string | null;
   endedAt: string | null;
   durationSeconds: number;
+  humanInputRequested: boolean;
 }
 
 export interface AISDKBaseEvent<TType extends string, TData = Record<string, unknown>> {
@@ -33,6 +34,7 @@ export type AISDKStreamEvent =
   | AISDKBaseEvent<'text-done', { participant?: string; content?: string; finishReason?: string }>
   | AISDKBaseEvent<'user-message', { content?: string; participant?: string }>
   | AISDKBaseEvent<'turn-complete', { turn?: number; totalMessages?: number }>
+  | AISDKBaseEvent<'human-input-requested', { participant?: string; turn?: number }>
   | AISDKBaseEvent<'conversation-event', { eventType?: string; participant?: string; data?: Record<string, unknown> }>
   | AISDKBaseEvent<'conversation_status', { active?: boolean; paused?: boolean; participants?: string[]; topic?: string }>
   | AISDKBaseEvent<'conversation_paused', Record<string, unknown>>

@@ -28,6 +28,7 @@ const INITIAL_META_STATE: AdapterMetaState = {
   startedAt: null,
   endedAt: null,
   durationSeconds: 0,
+  humanInputRequested: false,
 };
 
 const mergeStatus = (
@@ -307,9 +308,19 @@ export const useAISDKAdapter = () => {
         setMeta(prev => ({
           ...prev,
           turn: event.data.turn ?? prev.turn,
+          humanInputRequested: false, // Clear request on turn complete
         }));
         // Clear guard to allow next turn's messages
         messageCreationGuardRef.current.clear();
+        break;
+      }
+
+      case 'human-input-requested': {
+        setMeta(prev => ({
+          ...prev,
+          currentSpeaker: 'Human',
+          humanInputRequested: true,
+        }));
         break;
       }
 
@@ -369,6 +380,14 @@ export const useAISDKAdapter = () => {
         const nestedType = event.data?.eventType;
         const payload = event.data?.data ?? {};
 
+        if (nestedType === 'human_input_requested') {
+          setMeta(prev => ({
+            ...prev,
+            currentSpeaker: 'Human',
+            humanInputRequested: true,
+          }));
+        }
+
         if (nestedType === 'human_message_added') {
           const id = createMessageId('human');
           setMessages(prev => [
@@ -412,7 +431,7 @@ export const useAISDKAdapter = () => {
       default:
         break;
     }
-  }, [appendSystemMessage, applyStatus, reset]);
+  }, [appendSystemMessage, applyStatus, reset, meta.turn]);
 
   return useMemo(
     () => ({

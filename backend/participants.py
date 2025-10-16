@@ -16,7 +16,7 @@ from langchain_openai import ChatOpenAI
 
 
 CONFIG_PATH = Path(__file__).resolve().parent / "participants_config.json"
-ALLOWED_PROVIDERS = {"openai", "anthropic", "google"}
+ALLOWED_PROVIDERS = {"openai", "anthropic", "google", "human"}
 
 
 def _load_config() -> Dict[str, Any]:
@@ -38,21 +38,31 @@ def _load_config() -> Dict[str, Any]:
     participants: Dict[str, Dict[str, Any]] = {}
     for entry in raw.get("participants", []):
         participant_id = entry["id"]
+        provider = entry["provider"]
 
         # Prepend base prompt to participant's system prompt
-        participant_prompt = entry["system_prompt"]
-        if base_prompt:
+        participant_prompt = entry.get("system_prompt", "")
+        if base_prompt and participant_prompt:
             participant_prompt = f"{base_prompt}\n\n{participant_prompt}"
 
-        participants[participant_id] = {
-            "id": participant_id,
-            "name": entry.get("name", participant_id),
-            "provider": entry["provider"],
-            "model": entry["model"],
-            "temperature": float(entry.get("temperature", 0.7)),
-            "max_tokens": int(entry.get("max_tokens", 256)),
-            "system_prompt": participant_prompt,
-        }
+        # Human participants don't need model/temperature/max_tokens
+        if provider == "human":
+            participants[participant_id] = {
+                "id": participant_id,
+                "name": entry.get("name", participant_id),
+                "provider": provider,
+                "system_prompt": participant_prompt,
+            }
+        else:
+            participants[participant_id] = {
+                "id": participant_id,
+                "name": entry.get("name", participant_id),
+                "provider": provider,
+                "model": entry["model"],
+                "temperature": float(entry.get("temperature", 0.7)),
+                "max_tokens": int(entry.get("max_tokens", 256)),
+                "system_prompt": participant_prompt,
+            }
 
     if not participants:
         raise ValueError("No participants defined in participants_config.json")
@@ -162,7 +172,7 @@ def create_coordinator_llm():
         from typing import Literal
 
         class CoordinatorDecision(BaseModel):
-            next_speaker: Literal["Alice", "Bob", "Charlie"] = Field(description="Name of the participant who should speak next")
+            next_speaker: Literal["Human", "Alice", "Bob", "Charlie"] = Field(description="Name of the participant who should speak next")
             reasoning: str = Field(description="Brief explanation in 1-2 sentences")
 
         return ChatGoogleGenerativeAI(
@@ -193,10 +203,12 @@ def validate_participant(data: Dict[str, Any]) -> List[str]:
     elif provider not in ALLOWED_PROVIDERS:
         errors.append(f"Provider must be one of: {', '.join(ALLOWED_PROVIDERS)}")
 
-    if not data.get("model"):
+    # Model is not required for human provider
+    if provider != "human" and not data.get("model"):
         errors.append("Field 'model' is required")
 
-    if not data.get("system_prompt"):
+    # System prompt is optional for human provider
+    if provider != "human" and not data.get("system_prompt"):
         errors.append("Field 'system_prompt' is required")
 
     # Optional fields with type validation
