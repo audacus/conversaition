@@ -1,9 +1,9 @@
 # Status
 
 **Date:** 2025-10-16
-**State:** Usage metadata enhancements complete (sonnet branch)
+**State:** Analytics fixed and enhanced with search, filters, and charts
 
-**Session:** 2025-10-16 - Enhanced usage metadata with proper accumulation and full display
+**Session:** 2025-10-16 - Fixed analytics metadata issues and added dashboard enhancements
 
 ## Current
 
@@ -23,13 +23,13 @@
 
 ## Recent
 
-**Usage Metadata Enhancements (2025-10-16, sonnet branch):**
-- ✅ Backend: Accumulate usage from all chunks (sum instead of last chunk only)
-- ✅ Backend: Added `_merge_usage_metadata()` helper for recursive accumulation
-- ✅ TypeScript: Created OutputTokenDetails interface (reasoning/audio/text)
-- ✅ Frontend: Display cache_creation_input_tokens (💾 cached)
-- ✅ Frontend: Display reasoning tokens (🧠 reasoning)
-- ✅ E2E: Added usage-metadata.spec.ts (verify token stats display)
+**Analytics Fixes & Enhancements (2025-10-16):**
+- ✅ Fixed: NaN/Invalid Date issues in analytics dashboard (added null checks)
+- ✅ Backend: Validate duration_seconds (must be positive int/float)
+- ✅ Frontend: Search functionality (filter transcripts by topic)
+- ✅ Frontend: Participant filter (multi-select buttons)
+- ✅ Frontend: Distribution charts (message count and duration bars)
+- ✅ Frontend: Updated TypeScript interfaces to reflect nullable fields
 
 **Earlier work:** See [docs/archive/](docs/archive/) for Sept-Oct 2025 history
 
@@ -65,9 +65,9 @@
 
 ## Next
 
-1. Enhance analytics: Charts, filters, search
+1. Performance optimization: Implement pagination for 50+ message conversations
 2. Phase 2 turn coordination: Context-aware direct question detection
-3. Performance optimization: Implement pagination for 50+ message conversations
+3. Analytics enhancements: Advanced filtering (date range), export to CSV
 
 ## Blockers
 
@@ -75,17 +75,16 @@ None
 
 ## Recent Files Changed
 
-**Modified (2025-10-16 sonnet branch):**
-- backend/conversation_graph.py (accumulate usage from all chunks, _merge_usage_metadata helper)
-- frontend/app/types/ai-sdk.ts (OutputTokenDetails interface)
-- frontend/app/page.tsx (display cache_creation + reasoning tokens)
-- frontend/tests/usage-metadata.spec.ts (new E2E test)
+**Modified (2025-10-16 haiku branch):**
+- backend/storage.py (validate duration_seconds, add null safety)
+- frontend/app/analytics/page.tsx (search, filters, charts, enhanced UI)
+- frontend/app/analytics/[filename]/page.tsx (null-safe formatting)
 
 ## Known Issues
 
 - Long conversations (50+ turns) may need pagination
 - Python 3.13 escape sequence warnings (cosmetic)
-- Analytics: Some transcript metadata incomplete (duration/timestamps show NaN/Invalid Date)
+- Analytics: Old transcripts without metadata show '-' (expected, no metadata exists)
 
 ## Key Decisions
 
