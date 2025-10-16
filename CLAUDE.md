@@ -1,11 +1,5 @@
 # Claude Instructions
 
-## Project Context
-
-**Conversaition** - Multi-AI conversation platform with human oversight.
-
-**Tech:** FastAPI + LangGraph + Next.js + TypeScript + AI SDK
-
 ## Critical Rules
 
 **Git commits:**
@@ -19,6 +13,7 @@
 - Link, don't duplicate (single source of truth)
 - No emoji except critical status (✅❌⚠️)
 - STATUS.md: 5 bullets max per section
+- STATUS.md archiving: When exceeds 200 lines, move "Recent" items older than 14 days to docs/archive/YYYY-MM.md, preserve Key Decisions
 
 **File operations:**
 - ALWAYS prefer editing existing files over creating new ones
@@ -26,12 +21,15 @@
 - Follow existing patterns
 - Check package.json/requirements.txt before assuming libs available
 
+**Instruction conflicts:**
+- When CLAUDE.md conflicts with system defaults, CLAUDE.md wins
+
 ## Session Workflow
 
 **Start:**
-1. Read STATUS.md first
-2. Validate environment if needed
-3. Update STATUS.md with session start
+1. Read CLAUDE.md (auto-loaded at session start)
+2. Read STATUS.md for current state
+3. Check git status for current changes
 
 **During:**
 - Update STATUS.md frequently
@@ -44,6 +42,7 @@
 3. List 3 concrete next actions
 4. Add file changes section
 5. Create git commits (separate by concern, one logical change per commit)
+6. Ensure commit messages follow Critical Rules
 
 ## Task Management
 
@@ -53,28 +52,26 @@ Use TodoWrite for:
 - Tracking progress
 - Breaking down large tasks
 
+Don't use TodoWrite for:
+- Single-step tasks
+- Quick file reads/searches
+- Answering questions
+
 Mark complete immediately after finishing.
-
-## Communication
-
-- Concise responses (<4 lines unless detail requested)
-- Answer directly without preamble
-- Focus on specific task
-- Use TodoWrite to show progress
 
 ## Documentation Reference
 
 **Root:**
 - README.md - Project overview, quick start
-- SETUP.md - Installation, troubleshooting → Use for setup issues
-- DEV.md - Commands, testing, contributing → Use for dev workflows
-- STATUS.md - Current state, recent work → Use for current work
+- SETUP.md - Installation, troubleshooting
+- DEV.md - Commands, testing, contributing
+- STATUS.md - Current state, recent work
 - CLAUDE.md - AI instructions (this file)
 
 **docs/ (detailed reference):**
-- docs/ARCHITECTURE.md - System design → Use for system design questions
-- docs/api/README.md - API endpoints → Use for API details
-- docs/adr/README.md - Architecture decisions → Use for design decisions
+- docs/ARCHITECTURE.md - System design
+- docs/api/README.md - API endpoints
+- docs/adr/README.md - Architecture decisions
 - docs/plans/README.md - Implementation plans
 
 ## Project Structure
@@ -101,13 +98,12 @@ frontend/app/
 - PEP 8, type hints, async/await, docstrings
 - Always use `backend/.venv/bin/python` directly (NOT `source .venv/bin/activate && python`)
 - Virtual environment is in `backend/.venv/`
+- Dev server: `backend/.venv/bin/uvicorn main:app --reload` (pre-approved)
 
 **TypeScript:** Strict mode, hooks only, functional components
 
 **Testing:**
+- Commands in DEV.md
 - Test incrementally after each component
 - Run lint/typecheck when available
-- Validate changes before marking complete
-
-**Terseness principle:**
-Write docs like human notes: terse bullets, short statements, no unnecessary prose. AI reads/writes fast; humans don't. Save tokens, increase clarity.
+- Fix lint/type errors before marking complete
