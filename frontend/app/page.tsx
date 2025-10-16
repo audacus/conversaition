@@ -647,6 +647,12 @@ export default function Home() {
                             {message.usage.cache_read_input_tokens && (
                               <span>⚡ {message.usage.cache_read_input_tokens} cache</span>
                             )}
+                            {message.usage.cache_creation_input_tokens && (
+                              <span>💾 {message.usage.cache_creation_input_tokens} cached</span>
+                            )}
+                            {message.usage.output_token_details?.reasoning && (
+                              <span>🧠 {message.usage.output_token_details.reasoning} reasoning</span>
+                            )}
                           </div>
                         )}
                       </div>

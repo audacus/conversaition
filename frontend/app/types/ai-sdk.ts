@@ -1,11 +1,18 @@
 export type ConversationRole = 'ai' | 'human' | 'system';
 
+export interface OutputTokenDetails {
+  reasoning?: number;
+  audio?: number;
+  text?: number;
+  [key: string]: number | undefined;
+}
+
 export interface UsageMetadata {
   input_tokens?: number;
   output_tokens?: number;
   cache_read_input_tokens?: number;
   cache_creation_input_tokens?: number;
-  output_token_details?: Record<string, number>;
+  output_token_details?: OutputTokenDetails;
   [key: string]: unknown;
 }
 
