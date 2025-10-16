@@ -30,15 +30,15 @@ test.describe('Usage metadata display', () => {
     const usageStats = page.locator('div.flex.flex-wrap.gap-2.text-xs.text-gray-400');
     await expect(usageStats.first()).toBeVisible();
 
-    // Check for input tokens display
-    const inputTokens = page.locator('span:has-text("in")').first();
+    // Check for input tokens display (more specific selector)
+    const inputTokens = usageStats.first().locator('span:has-text("↓")');
     await expect(inputTokens).toBeVisible();
-    await expect(inputTokens).toContainText('↓');
+    await expect(inputTokens).toContainText('in');
 
-    // Check for output tokens display
-    const outputTokens = page.locator('span:has-text("out")').first();
+    // Check for output tokens display (more specific selector)
+    const outputTokens = usageStats.first().locator('span:has-text("↑")');
     await expect(outputTokens).toBeVisible();
-    await expect(outputTokens).toContainText('↑');
+    await expect(outputTokens).toContainText('out');
 
     // Stop conversation
     await page.getByRole('button', { name: '⏹️ Stop' }).click();
