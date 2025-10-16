@@ -1,9 +1,9 @@
 # Status
 
 **Date:** 2025-10-16
-**State:** Usage metadata exposure complete, tokens/cache/reasoning now visible in UI
+**State:** Usage metadata enhancements complete (sonnet branch)
 
-**Session:** 2025-10-16 - Exposed usage_metadata to frontend
+**Session:** 2025-10-16 - Enhanced usage metadata with proper accumulation and full display
 
 ## Current
 
@@ -17,18 +17,19 @@
 - Participants CRUD UI
 - Analytics dashboard with transcript viewer and ongoing conversation tracking
 - Message attribution with `<mention>` and `<request to="">` tags
-- Usage metrics exposed (input tokens, output tokens, cache read, reasoning tokens)
+- Usage metrics exposed (input/output tokens, cache read/creation, reasoning tokens)
 - E2E Playwright tests
 - Dark theme UI
 
 ## Recent
 
-**Usage Metadata Exposure (2025-10-16):**
-- ✅ Backend: Accumulate usage_metadata from LLM streaming chunks
-- ✅ Backend: Include usage_metadata in ai_response_complete event
-- ✅ Frontend: Added UsageMetadata type interface
-- ✅ Frontend: Store usage metadata in message objects
-- ✅ Frontend: Display tokens/cache stats inline with messages (↓ in, ↑ out, ⚡ cache)
+**Usage Metadata Enhancements (2025-10-16, sonnet branch):**
+- ✅ Backend: Accumulate usage from all chunks (sum instead of last chunk only)
+- ✅ Backend: Added `_merge_usage_metadata()` helper for recursive accumulation
+- ✅ TypeScript: Created OutputTokenDetails interface (reasoning/audio/text)
+- ✅ Frontend: Display cache_creation_input_tokens (💾 cached)
+- ✅ Frontend: Display reasoning tokens (🧠 reasoning)
+- ✅ E2E: Added usage-metadata.spec.ts (verify token stats display)
 
 **Earlier work:** See [docs/archive/](docs/archive/) for Sept-Oct 2025 history
 
@@ -74,12 +75,11 @@ None
 
 ## Recent Files Changed
 
-**Modified (2025-10-16 usage metadata):**
-- backend/conversation_graph.py (capture final_usage_metadata from chunks)
-- backend/adapter.py (expose usage_metadata in text-done event)
-- frontend/app/types/ai-sdk.ts (added UsageMetadata interface)
-- frontend/app/hooks/useAISDKAdapter.ts (store usage in message)
-- frontend/app/page.tsx (display usage stats inline)
+**Modified (2025-10-16 sonnet branch):**
+- backend/conversation_graph.py (accumulate usage from all chunks, _merge_usage_metadata helper)
+- frontend/app/types/ai-sdk.ts (OutputTokenDetails interface)
+- frontend/app/page.tsx (display cache_creation + reasoning tokens)
+- frontend/tests/usage-metadata.spec.ts (new E2E test)
 
 ## Known Issues
 
