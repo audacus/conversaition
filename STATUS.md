@@ -1,27 +1,36 @@
 # Status
 
-**Date:** 2025-10-14
-**State:** Human-as-participant implementation complete, ready for testing
+**Date:** 2025-10-16
+**State:** Human-as-participant implementation complete, ready for manual testing
 
-**Session:** 2025-10-14 - Implemented Human as full participant in conversations
+**Session:** 2025-10-16 - Implemented Human as full conversation participant
 
 ## Current
 
 **Features complete:**
 - Multi-AI orchestration (Alice/OpenAI, Bob/Anthropic, Charlie/Gemini)
-- Intelligent LLM-based turn coordination (Gemini gemini-2.5-flash-lite coordinator with structured output)
-- Real-time SSE streaming
+- Human as full participant (can be selected by coordinator, pause-to-inject still works)
+- Intelligent LLM-based turn coordination (Gemini coordinator with structured output)
+- Real-time SSE streaming with human input waiting
 - Full conversation controls (start/pause/resume/stop/inject)
 - Conversation persistence with URL-based reconnection
 - Participants CRUD UI
 - Analytics dashboard with transcript viewer and ongoing conversation tracking
-- Message attribution (participants can reference each other by name)
+- Message attribution with `<mention>` and `<request to="">` tags
 - E2E Playwright tests
 - Dark theme UI
 
 ## Recent
 
 **Earlier work:** See [docs/archive/](docs/archive/) for Sept-Oct 2025 history
+
+**Human-as-Participant (2025-10-16):**
+- ✅ Added Human to participants_config.json (provider: "human")
+- ✅ Backend: Async `_wait_for_human_input()` blocks until human responds
+- ✅ Backend: `human_input_requested` event signals frontend when Human's turn
+- ✅ Frontend: Orange highlight + "Your turn!" placeholder when Human selected
+- ✅ Enhanced message parsing: `<request to="X">` and `<mention>X</mention>` tags
+- ✅ Fixed ESLint warnings (useAISDKAdapter deps, unused variable)
 
 **STATUS.md Archiving (2025-10-16):**
 - ✅ Reduced STATUS.md from 281 to 79 lines (72% reduction)
@@ -58,10 +67,15 @@ None
 ## Recent Files Changed
 
 **Modified (2025-10-16):**
-- CLAUDE.md (compression: 130→108 lines; added archiving rule, conflict resolution, TodoWrite guidance)
-- STATUS.md (archiving: 281→79 lines; documented CLAUDE.md changes and archiving)
-- docs/archive/2025-09.md (NEW: archived September work)
-- docs/archive/2025-10.md (NEW: archived Oct 1-14 work)
+- backend/conversation_graph.py (human input waiting, request/mention extraction)
+- backend/main.py (inject endpoint: detect Human's turn vs manual injection)
+- backend/participants.py (human provider support, coordinator includes Human)
+- backend/participants_config.json (added Human participant)
+- frontend/app/hooks/useAISDKAdapter.ts (human_input_requested handling, ESLint fix)
+- frontend/app/page.tsx (orange highlight for Human's turn, ESLint fix)
+- frontend/app/types/ai-sdk.ts (humanInputRequested state)
+- CLAUDE.md (backend startup command fix)
+- STATUS.md (documented human-participant work)
 
 ## Known Issues
 
