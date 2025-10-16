@@ -1,9 +1,9 @@
 # Status
 
 **Date:** 2025-10-16
-**State:** Human-as-participant implementation complete, ready for manual testing
+**State:** Usage metadata exposure complete, tokens/cache/reasoning now visible in UI
 
-**Session:** 2025-10-16 - Implemented Human as full conversation participant
+**Session:** 2025-10-16 - Exposed usage_metadata to frontend
 
 ## Current
 
@@ -17,10 +17,18 @@
 - Participants CRUD UI
 - Analytics dashboard with transcript viewer and ongoing conversation tracking
 - Message attribution with `<mention>` and `<request to="">` tags
+- Usage metrics exposed (input tokens, output tokens, cache read, reasoning tokens)
 - E2E Playwright tests
 - Dark theme UI
 
 ## Recent
+
+**Usage Metadata Exposure (2025-10-16):**
+- ✅ Backend: Accumulate usage_metadata from LLM streaming chunks
+- ✅ Backend: Include usage_metadata in ai_response_complete event
+- ✅ Frontend: Added UsageMetadata type interface
+- ✅ Frontend: Store usage metadata in message objects
+- ✅ Frontend: Display tokens/cache stats inline with messages (↓ in, ↑ out, ⚡ cache)
 
 **Earlier work:** See [docs/archive/](docs/archive/) for Sept-Oct 2025 history
 
@@ -56,9 +64,9 @@
 
 ## Next
 
-1. Expose usage_metadata to frontend (tokens, cache stats, reasoning)
-2. Enhance analytics: Charts, filters, search
-3. Phase 2 turn coordination: Context-aware direct question detection
+1. Enhance analytics: Charts, filters, search
+2. Phase 2 turn coordination: Context-aware direct question detection
+3. Performance optimization: Implement pagination for 50+ message conversations
 
 ## Blockers
 
@@ -66,16 +74,12 @@ None
 
 ## Recent Files Changed
 
-**Modified (2025-10-16):**
-- backend/conversation_graph.py (human input waiting, request/mention extraction)
-- backend/main.py (inject endpoint: detect Human's turn vs manual injection)
-- backend/participants.py (human provider support, coordinator includes Human)
-- backend/participants_config.json (added Human participant)
-- frontend/app/hooks/useAISDKAdapter.ts (human_input_requested handling, ESLint fix)
-- frontend/app/page.tsx (orange highlight for Human's turn, ESLint fix)
-- frontend/app/types/ai-sdk.ts (humanInputRequested state)
-- CLAUDE.md (backend startup command fix)
-- STATUS.md (documented human-participant work)
+**Modified (2025-10-16 usage metadata):**
+- backend/conversation_graph.py (capture final_usage_metadata from chunks)
+- backend/adapter.py (expose usage_metadata in text-done event)
+- frontend/app/types/ai-sdk.ts (added UsageMetadata interface)
+- frontend/app/hooks/useAISDKAdapter.ts (store usage in message)
+- frontend/app/page.tsx (display usage stats inline)
 
 ## Known Issues
 
