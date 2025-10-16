@@ -69,6 +69,7 @@ export default function Home() {
   const [participantsError, setParticipantsError] = useState<string | null>(null);
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [streamError, setStreamError] = useState<string | null>(null);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const reconnectionAttemptedRef = useRef<string | null>(null);
 
   const rawApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';

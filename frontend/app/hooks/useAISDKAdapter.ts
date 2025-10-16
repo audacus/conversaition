@@ -5,6 +5,7 @@ import {
   AISDKStreamEvent,
   AdapterMetaState,
   ConversationMessage,
+  UsageMetadata,
 } from '../types/ai-sdk';
 import {
   ConversationStatus,
@@ -48,17 +49,17 @@ const extractStatusFromEvent = (
     return {
       active: true,
       paused: false,
-      participants: event.data.participants ?? [],
-      topic: event.data.topic,
+      participants: (event.data.participants as string[] | undefined) ?? [],
+      topic: event.data.topic as string | undefined,
     };
   }
 
   if (event.type === 'conversation_status') {
     return {
-      active: event.data.active,
-      paused: event.data.paused,
-      participants: event.data.participants,
-      topic: event.data.topic,
+      active: event.data.active as boolean | undefined,
+      paused: event.data.paused as boolean | undefined,
+      participants: event.data.participants as string[] | undefined,
+      topic: event.data.topic as string | undefined,
     };
   }
 
@@ -152,8 +153,8 @@ export const useAISDKAdapter = () => {
       applyStatus({
         active: true,
         paused: false,
-        participants: event.data.participants ?? [],
-        topic: event.data.topic,
+        participants: (event.data.participants as string[] | undefined) ?? [],
+        topic: event.data.topic as string | undefined,
       });
       return;
     }
@@ -167,8 +168,8 @@ export const useAISDKAdapter = () => {
       case 'speaker-change': {
         setMeta(prev => ({
           ...prev,
-          currentSpeaker: event.data.participant ?? prev.currentSpeaker,
-          turn: event.data.turn ?? prev.turn,
+          currentSpeaker: (event.data.participant as string | undefined) ?? prev.currentSpeaker,
+          turn: (event.data.turn as number | undefined) ?? prev.turn,
         }));
         break;
       }
@@ -176,13 +177,13 @@ export const useAISDKAdapter = () => {
       case 'thinking-start': {
         setMeta(prev => ({
           ...prev,
-          thinkingParticipant: event.data.participant ?? prev.thinkingParticipant,
+          thinkingParticipant: (event.data.participant as string | undefined) ?? prev.thinkingParticipant,
         }));
         break;
       }
 
       case 'text-start': {
-        const participant = event.data.participant ?? 'Participant';
+        const participant = (event.data.participant as string | undefined) ?? 'Participant';
 
         // Guard against StrictMode double-invocation
         const guardKey = `${participant}-${meta.turn}`;
@@ -206,12 +207,12 @@ export const useAISDKAdapter = () => {
       }
 
       case 'text-delta': {
-        const delta = event.data.textDelta ?? '';
+        const delta = (event.data.textDelta as string | undefined) ?? '';
         if (!delta) {
           break;
         }
 
-        const participant = event.data.participant ?? 'Participant';
+        const participant = (event.data.participant as string | undefined) ?? 'Participant';
 
         setMessages(prev => {
           const refId = pendingMessageIdRef.current;
@@ -254,8 +255,8 @@ export const useAISDKAdapter = () => {
       }
 
       case 'text-done': {
-        const finalContent = event.data.content;
-        const participant = event.data.participant;
+        const finalContent = event.data.content as string | undefined;
+        const participant = event.data.participant as string | undefined;
 
         setMeta(prev => ({
           ...prev,
@@ -295,7 +296,7 @@ export const useAISDKAdapter = () => {
                       : message.content,
                   isStreaming: false,
                   complete: true,
-                  usage: event.data.usage,
+                  usage: event.data.usage as UsageMetadata | undefined,
                 }
               : message
           );
@@ -308,7 +309,7 @@ export const useAISDKAdapter = () => {
       case 'turn-complete': {
         setMeta(prev => ({
           ...prev,
-          turn: event.data.turn ?? prev.turn,
+          turn: (event.data.turn as number | undefined) ?? prev.turn,
           humanInputRequested: false, // Clear request on turn complete
         }));
         // Clear guard to allow next turn's messages
@@ -326,13 +327,13 @@ export const useAISDKAdapter = () => {
       }
 
       case 'user-message': {
-        const id = createMessageId(event.data.participant ?? 'human');
+        const id = createMessageId((event.data.participant as string | undefined) ?? 'human');
         setMessages(prev => [
           ...prev,
           {
             id,
-            participant: event.data.participant ?? 'Human',
-            content: event.data.content ?? '',
+            participant: (event.data.participant as string | undefined) ?? 'Human',
+            content: (event.data.content as string | undefined) ?? '',
             role: 'human',
             isStreaming: false,
             complete: true,
@@ -368,8 +369,8 @@ export const useAISDKAdapter = () => {
         applyStatus({
           active: false,
           paused: false,
-          participants: event.data.participants,
-          topic: event.data.topic,
+          participants: event.data.participants as string[] | undefined,
+          topic: event.data.topic as string | undefined,
         });
 
         pendingMessageIdRef.current = null;
@@ -378,8 +379,8 @@ export const useAISDKAdapter = () => {
       }
 
       case 'conversation-event': {
-        const nestedType = event.data?.eventType;
-        const payload = event.data?.data ?? {};
+        const nestedType = event.data?.eventType as string | undefined;
+        const payload = (event.data?.data ?? {}) as Record<string, unknown>;
 
         if (nestedType === 'human_input_requested') {
           setMeta(prev => ({
@@ -424,7 +425,7 @@ export const useAISDKAdapter = () => {
       }
 
       case 'error': {
-        const errorMessage = event.data.error || 'An unexpected error occurred.';
+        const errorMessage = (event.data.error as string | undefined) || 'An unexpected error occurred.';
         appendSystemMessage(errorMessage);
         break;
       }
