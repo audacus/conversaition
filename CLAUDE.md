@@ -98,7 +98,7 @@ frontend/app/
 - PEP 8, type hints, async/await, docstrings
 - Always use `backend/.venv/bin/python` directly (NOT `source .venv/bin/activate && python`)
 - Virtual environment is in `backend/.venv/`
-- Dev server: `backend/.venv/bin/uvicorn main:app --reload` (pre-approved)
+- Dev server: `backend/.venv/bin/uvicorn main:app --reload --app-dir backend/` (pre-approved from root)
 
 **TypeScript:** Strict mode, hooks only, functional components
 
