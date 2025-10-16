@@ -556,6 +556,7 @@ class ConversationGraph:
             response_content = ""
             thinking_content = ""
             chunk_count = 0
+            final_usage_metadata = None  # Accumulate usage metadata
 
             async for chunk in llm.astream(conversation_messages):
                 chunk_count += 1
@@ -578,6 +579,8 @@ class ConversationGraph:
 
                 if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
                     chunk_metadata['usage_metadata'] = chunk.usage_metadata
+                    # Capture the final usage metadata (last chunk typically has complete stats)
+                    final_usage_metadata = chunk.usage_metadata
 
                 if hasattr(chunk, 'tool_calls'):
                     chunk_metadata['has_tool_calls'] = bool(chunk.tool_calls)
@@ -628,15 +631,20 @@ class ConversationGraph:
                         "full_content": response_content
                     })
 
-            # Create final message
+            # Create final message with usage metadata
+            message_kwargs = {"participant": current_speaker}
+            if final_usage_metadata:
+                message_kwargs["usage_metadata"] = final_usage_metadata
+
             ai_message = AIMessage(
                 content=response_content,
-                additional_kwargs={"participant": current_speaker}
+                additional_kwargs=message_kwargs
             )
 
             await self._emit_event("ai_response_complete", {
                 "participant": current_speaker,
-                "content": response_content
+                "content": response_content,
+                "usage_metadata": final_usage_metadata
             })
 
             updated_state: ConversationState = {

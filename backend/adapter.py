@@ -101,7 +101,8 @@ class LangGraphToAISDKAdapter:
                 "data": {
                     "participant": event_data.get("participant"),
                     "content": event_data.get("content"),
-                    "finishReason": "stop"
+                    "finishReason": "stop",
+                    "usage": event_data.get("usage_metadata")
                 }
             }
             self.message_buffer = ""
