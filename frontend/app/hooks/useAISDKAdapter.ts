@@ -295,6 +295,7 @@ export const useAISDKAdapter = () => {
                       : message.content,
                   isStreaming: false,
                   complete: true,
+                  usage: event.data.usage,
                 }
               : message
           );

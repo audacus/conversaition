@@ -636,6 +636,19 @@ export default function Home() {
                         <p className="text-sm text-gray-100 whitespace-pre-wrap leading-relaxed">
                           {stripAttributionPrefix(message.content) || '…'}
                         </p>
+                        {message.usage && (
+                          <div className="flex flex-wrap gap-2 text-xs text-gray-400 pt-1">
+                            {message.usage.input_tokens && (
+                              <span>↓ {message.usage.input_tokens} in</span>
+                            )}
+                            {message.usage.output_tokens && (
+                              <span>↑ {message.usage.output_tokens} out</span>
+                            )}
+                            {message.usage.cache_read_input_tokens && (
+                              <span>⚡ {message.usage.cache_read_input_tokens} cache</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </li>
                   );

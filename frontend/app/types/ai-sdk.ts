@@ -1,5 +1,14 @@
 export type ConversationRole = 'ai' | 'human' | 'system';
 
+export interface UsageMetadata {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_read_input_tokens?: number;
+  cache_creation_input_tokens?: number;
+  output_token_details?: Record<string, number>;
+  [key: string]: unknown;
+}
+
 export interface ConversationMessage {
   id: string;
   participant: string;
@@ -8,6 +17,7 @@ export interface ConversationMessage {
   isStreaming: boolean;
   complete: boolean;
   timestamp?: string;
+  usage?: UsageMetadata;
 }
 
 export interface AdapterMetaState {
@@ -31,7 +41,7 @@ export type AISDKStreamEvent =
   | AISDKBaseEvent<'thinking-start', { participant?: string; model?: string }>
   | AISDKBaseEvent<'text-start', { participant?: string }>
   | AISDKBaseEvent<'text-delta', { textDelta?: string; participant?: string }>
-  | AISDKBaseEvent<'text-done', { participant?: string; content?: string; finishReason?: string }>
+  | AISDKBaseEvent<'text-done', { participant?: string; content?: string; finishReason?: string; usage?: UsageMetadata }>
   | AISDKBaseEvent<'user-message', { content?: string; participant?: string }>
   | AISDKBaseEvent<'turn-complete', { turn?: number; totalMessages?: number }>
   | AISDKBaseEvent<'human-input-requested', { participant?: string; turn?: number }>
