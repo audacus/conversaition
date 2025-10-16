@@ -13,9 +13,9 @@ interface Message {
 interface Transcript {
   topic: string;
   participants: string[];
-  started_at: string;
-  ended_at: string;
-  duration_seconds: number;
+  started_at: string | null;
+  ended_at: string | null;
+  duration_seconds: number | null;
   message_count: number;
   messages: Message[];
 }
@@ -52,14 +52,23 @@ export default function TranscriptDetailPage() {
     fetchTranscript();
   }, [filename, apiBaseUrl]);
 
-  const formatDuration = (seconds: number) => {
+  const formatDuration = (seconds?: number | null) => {
+    if (!seconds || typeof seconds !== 'number' || isNaN(seconds)) {
+      return '-';
+    }
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.round(seconds % 60);
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
 
-  const formatDateTime = (isoString: string) => {
+  const formatDateTime = (isoString?: string | null) => {
+    if (!isoString) {
+      return '-';
+    }
     const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
     return date.toLocaleString();
   };
 

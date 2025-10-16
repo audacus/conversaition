@@ -67,14 +67,18 @@ class TranscriptStore:
                 continue
 
             metadata = data.get("metadata", {})
+            started_at = metadata.get("started_at")
+            stopped_at = metadata.get("stopped_at")
+            duration = metadata.get("duration_seconds")
+
             transcripts.append({
                 "filename": file_path.name,
                 "topic": data.get("topic"),
                 "participants": data.get("participants", []),
                 "message_count": len(data.get("messages", [])),
-                "started_at": metadata.get("started_at"),
-                "ended_at": metadata.get("stopped_at"),
-                "duration_seconds": metadata.get("duration_seconds"),
+                "started_at": started_at,
+                "ended_at": stopped_at,
+                "duration_seconds": duration if isinstance(duration, (int, float)) and duration >= 0 else None,
             })
         return transcripts
 

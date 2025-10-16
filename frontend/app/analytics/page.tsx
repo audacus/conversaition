@@ -8,9 +8,9 @@ interface TranscriptMetadata {
   topic: string;
   participants: string[];
   message_count: number;
-  started_at: string;
-  ended_at: string;
-  duration_seconds: number;
+  started_at: string | null;
+  ended_at: string | null;
+  duration_seconds: number | null;
 }
 
 interface OngoingConversation {
@@ -21,7 +21,7 @@ interface OngoingConversation {
   paused: boolean;
   turn_count: number;
   message_count: number;
-  started_at: string;
+  started_at: string | null;
 }
 
 interface AnalyticsSummary {
@@ -38,6 +38,9 @@ export default function AnalyticsPage() {
   const [ongoingConversation, setOngoingConversation] = useState<OngoingConversation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTopic, setSearchTopic] = useState('');
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
+  const [allParticipants, setAllParticipants] = useState<string[]>([]);
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
@@ -57,8 +60,16 @@ export default function AnalyticsPage() {
 
         const transcriptsData = await transcriptsRes.json();
         const summaryData = await summaryRes.json();
+        const transcripts = transcriptsData.transcripts || [];
 
-        setTranscripts(transcriptsData.transcripts || []);
+        // Extract all unique participants
+        const participants = new Set<string>();
+        transcripts.forEach((t: TranscriptMetadata) => {
+          t.participants.forEach((p) => participants.add(p));
+        });
+        setAllParticipants(Array.from(participants).sort());
+
+        setTranscripts(transcripts);
         setSummary(summaryData);
 
         // Check for ongoing conversation
@@ -84,15 +95,45 @@ export default function AnalyticsPage() {
     fetchAnalytics();
   }, [apiBaseUrl]);
 
-  const formatDuration = (seconds: number) => {
+  const formatDuration = (seconds?: number | null) => {
+    if (!seconds || typeof seconds !== 'number' || isNaN(seconds)) {
+      return '-';
+    }
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.round(seconds % 60);
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
 
-  const formatDateTime = (isoString: string) => {
+  const formatDateTime = (isoString?: string | null) => {
+    if (!isoString) {
+      return '-';
+    }
     const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) {
+      return '-';
+    }
     return date.toLocaleString();
+  };
+
+  // Filter transcripts based on search and selected participants
+  const filteredTranscripts = transcripts.filter((transcript) => {
+    const topicMatch =
+      !searchTopic ||
+      (transcript.topic?.toLowerCase().includes(searchTopic.toLowerCase()) ?? false);
+
+    const participantMatch =
+      selectedParticipants.length === 0 ||
+      selectedParticipants.some((p) => transcript.participants.includes(p));
+
+    return topicMatch && participantMatch;
+  });
+
+  const toggleParticipant = (participant: string) => {
+    setSelectedParticipants((prev) =>
+      prev.includes(participant)
+        ? prev.filter((p) => p !== participant)
+        : [...prev, participant]
+    );
   };
 
   return (
@@ -116,6 +157,43 @@ export default function AnalyticsPage() {
         {error && (
           <div className="mb-6 p-4 bg-red-950 border border-red-800 text-red-300 rounded-lg">
             {error}
+          </div>
+        )}
+
+        {/* Search and Filters */}
+        {!loading && (
+          <div className="mb-8 bg-gray-800 rounded-lg p-6 border border-gray-700">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-200 mb-2">Search by Topic</label>
+              <input
+                type="text"
+                placeholder="Search transcripts..."
+                value={searchTopic}
+                onChange={(e) => setSearchTopic(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            {allParticipants.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-200 mb-3">Filter by Participant</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {allParticipants.map((participant) => (
+                    <button
+                      key={participant}
+                      onClick={() => toggleParticipant(participant)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        selectedParticipants.includes(participant)
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {participant}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -151,6 +229,61 @@ export default function AnalyticsPage() {
                   <div className="text-gray-400 text-sm mb-1">Avg Duration</div>
                   <div className="text-2xl font-bold text-gray-100">
                     {formatDuration(Math.round(summary.avg_duration_seconds ?? 0))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Distribution Charts */}
+            {filteredTranscripts.length > 0 && (
+              <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Message Distribution */}
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-100 mb-4">Message Distribution</h3>
+                  <div className="space-y-2">
+                    {filteredTranscripts.slice(0, 5).map((transcript) => {
+                      const maxMessages = Math.max(...filteredTranscripts.map((t) => t.message_count));
+                      const percentage = (transcript.message_count / maxMessages) * 100;
+                      return (
+                        <div key={transcript.filename}>
+                          <div className="flex justify-between text-xs text-gray-300 mb-1">
+                            <span>{transcript.topic || 'Untitled'}</span>
+                            <span>{transcript.message_count}</span>
+                          </div>
+                          <div className="w-full bg-gray-700 rounded h-2 overflow-hidden">
+                            <div
+                              className="bg-indigo-500 h-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Duration Distribution */}
+                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-100 mb-4">Duration Distribution</h3>
+                  <div className="space-y-2">
+                    {filteredTranscripts.slice(0, 5).map((transcript) => {
+                      const maxDuration = Math.max(...filteredTranscripts.map((t) => t.duration_seconds || 0));
+                      const percentage = transcript.duration_seconds ? (transcript.duration_seconds / maxDuration) * 100 : 0;
+                      return (
+                        <div key={transcript.filename}>
+                          <div className="flex justify-between text-xs text-gray-300 mb-1">
+                            <span>{transcript.topic || 'Untitled'}</span>
+                            <span>{formatDuration(transcript.duration_seconds)}</span>
+                          </div>
+                          <div className="w-full bg-gray-700 rounded h-2 overflow-hidden">
+                            <div
+                              className="bg-green-500 h-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -206,14 +339,14 @@ export default function AnalyticsPage() {
                     )}
 
                     {/* Completed Conversations */}
-                    {transcripts.length === 0 && !ongoingConversation ? (
+                    {filteredTranscripts.length === 0 && !ongoingConversation ? (
                       <tr>
                         <td colSpan={7} className="px-6 py-8 text-center text-gray-400">
-                          No transcripts found
+                          {transcripts.length === 0 ? 'No transcripts found' : 'No transcripts match your filters'}
                         </td>
                       </tr>
                     ) : (
-                      transcripts.map((transcript) => (
+                      filteredTranscripts.map((transcript) => (
                         <tr key={transcript.filename} className="hover:bg-gray-700 transition-colors">
                           <td className="px-6 py-4 text-sm text-gray-100">{transcript.topic}</td>
                           <td className="px-6 py-4 text-sm text-gray-300">
