@@ -434,6 +434,30 @@ class ConversationGraph:
 
         return ""
 
+    def _merge_usage_metadata(self, accumulated: dict, new_usage: dict) -> None:
+        """Merge usage metadata from a chunk into accumulated totals.
+
+        Handles numeric fields by summing them, and nested dicts like output_token_details
+        by recursively merging.
+        """
+        for key, value in new_usage.items():
+            if isinstance(value, (int, float)):
+                # Sum numeric values
+                accumulated[key] = accumulated.get(key, 0) + value
+            elif isinstance(value, dict):
+                # Recursively merge nested dicts (e.g., output_token_details)
+                if key not in accumulated:
+                    accumulated[key] = {}
+                for nested_key, nested_value in value.items():
+                    if isinstance(nested_value, (int, float)):
+                        accumulated[key][nested_key] = accumulated[key].get(nested_key, 0) + nested_value
+                    else:
+                        # For non-numeric nested values, use the latest value
+                        accumulated[key][nested_key] = nested_value
+            else:
+                # For non-numeric values, use the latest value
+                accumulated[key] = value
+
     async def _wait_for_human_input(self, state: ConversationState) -> ConversationState:
         """Wait for human to provide input via inject endpoint"""
         logger.info("Waiting for human input...")
@@ -556,7 +580,7 @@ class ConversationGraph:
             response_content = ""
             thinking_content = ""
             chunk_count = 0
-            final_usage_metadata = None  # Accumulate usage metadata
+            accumulated_usage = {}  # Accumulate usage metadata from all chunks
 
             async for chunk in llm.astream(conversation_messages):
                 chunk_count += 1
@@ -579,8 +603,8 @@ class ConversationGraph:
 
                 if hasattr(chunk, 'usage_metadata') and chunk.usage_metadata:
                     chunk_metadata['usage_metadata'] = chunk.usage_metadata
-                    # Capture the final usage metadata (last chunk typically has complete stats)
-                    final_usage_metadata = chunk.usage_metadata
+                    # Accumulate usage metadata from all chunks
+                    self._merge_usage_metadata(accumulated_usage, chunk.usage_metadata)
 
                 if hasattr(chunk, 'tool_calls'):
                     chunk_metadata['has_tool_calls'] = bool(chunk.tool_calls)
@@ -633,6 +657,7 @@ class ConversationGraph:
 
             # Create final message with usage metadata
             message_kwargs = {"participant": current_speaker}
+            final_usage_metadata = accumulated_usage if accumulated_usage else None
             if final_usage_metadata:
                 message_kwargs["usage_metadata"] = final_usage_metadata
 
